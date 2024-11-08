@@ -1,12 +1,14 @@
-import './index.css'
+// src/App.tsx
+import './index.css';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Chat, ChatMessage as ChatMessageType } from './types';
+import { Chat, ChatMessage as ChatMessageType, Tool, ToolCreate } from './types';
 import ChatMessage from './components/ChatMessage';
 import { chatApi } from './api';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingMessage } from './components/LoadingMessage';
-import { Send, X } from 'lucide-react'
+import { Send, X } from 'lucide-react';
+import { ToolPanel } from './components/ToolPanel';
 
 const ErrorDisplay: React.FC<{ error: string | null; onDismiss: () => void }> = ({ 
   error, 
@@ -36,6 +38,11 @@ export default function Component() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Tool-related states
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [activeTool, setActiveTool] = useState<number | null>(null);
+  const [loadingTools, setLoadingTools] = useState(false);
+
   const generateChatTitle = (chat: Chat): string => {
     const firstUserMessage = chat.history.find(message => message.role === 'user');
     if (firstUserMessage) {
@@ -60,9 +67,31 @@ export default function Component() {
     }
   }, [selectedChatId]);
 
+  const loadTools = useCallback(async () => {
+    try {
+      setLoadingTools(true);
+      const loadedTools = await chatApi.listTools();
+      setTools(loadedTools);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load tools');
+    } finally {
+      setLoadingTools(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadChats();
-  }, [loadChats]);
+    loadTools();
+  }, [loadChats, loadTools]);
+
+  useEffect(() => {
+    const chat = chats.find(chat => chat.id === selectedChatId);
+    if (chat && chat.active_tool_id) {
+      setActiveTool(chat.active_tool_id);
+    } else {
+      setActiveTool(null);
+    }
+  }, [selectedChatId, chats]);
 
   const handleNewChat = async () => {
     try {
@@ -121,7 +150,7 @@ export default function Component() {
 
           const newHistory = [
             ...chat.history.slice(0, userMessageIndex + 1),
-            updatedChat.history[updatedChat.history.length - 1]
+            ...updatedChat.history.slice(updatedChat.history.length - 1)
           ];
           
           return {
@@ -167,6 +196,65 @@ export default function Component() {
     }
   };
 
+  // ToolPanel handlers
+  const handleCreateTool = async (tool: ToolCreate) => {
+    try {
+      setLoadingTools(true);
+      const newTool = await chatApi.createTool(tool);
+      setTools(prevTools => [...prevTools, newTool]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create tool');
+    } finally {
+      setLoadingTools(false);
+    }
+  };
+
+  const handleUpdateTool = async (toolId: number, tool: Partial<ToolCreate>) => {
+    try {
+      setLoadingTools(true);
+      const updatedTool = await chatApi.updateTool(toolId, tool);
+      setTools(prevTools => prevTools.map(t => (t.id === toolId ? updatedTool : t)));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update tool');
+    } finally {
+      setLoadingTools(false);
+    }
+  };
+
+  const handleDeleteTool = async (toolId: number) => {
+    try {
+      setLoadingTools(true);
+      await chatApi.deleteTool(toolId);
+      setTools(prevTools => prevTools.filter(t => t.id !== toolId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete tool');
+    } finally {
+      setLoadingTools(false);
+    }
+  };
+
+  const handleAssignTool = async (toolId: number) => {
+    if (!selectedChatId) return;
+    try {
+      setLoadingTools(true);
+      const updatedChat = await chatApi.assignToolToChat(selectedChatId, toolId);
+      setChats(prevChats =>
+        prevChats.map(chat =>
+          chat.id === selectedChatId ? updatedChat : chat
+        )
+      );
+      setActiveTool(toolId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to assign tool');
+    } finally {
+      setLoadingTools(false);
+    }
+  };
+
+  const handleRefreshTools = async () => {
+    await loadTools();
+  };
+
   const selectedChat = chats.find(chat => chat.id === selectedChatId);
 
   const scrollToBottom = useCallback(() => {
@@ -190,6 +278,7 @@ export default function Component() {
     <div className="flex h-screen bg-gray-100">
       <ErrorDisplay error={error} onDismiss={() => setError(null)} />
       
+      {/* Left Sidebar - Chat List */}
       <div className="w-64 border-r border-gray-200 bg-white flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <h1 className="text-2xl font-bold">Structured Chats</h1>
@@ -244,6 +333,7 @@ export default function Component() {
         </div>
       </div>
 
+      {/* Main Content - Chat Messages */}
       <div className="flex-1 flex flex-col">
         {selectedChat ? (
           <>
@@ -299,6 +389,19 @@ export default function Component() {
           </div>
         )}
       </div>
+
+      {/* Right Sidebar - ToolPanel */}
+      <ToolPanel
+        tools={tools}
+        selectedChatId={selectedChatId}
+        onCreateTool={handleCreateTool}
+        onAssignTool={handleAssignTool}
+        onDeleteTool={handleDeleteTool}
+        onUpdateTool={handleUpdateTool}
+        onRefreshTools={handleRefreshTools}
+        loading={loadingTools}
+        activeTool={activeTool}
+      />
     </div>
   );
 }

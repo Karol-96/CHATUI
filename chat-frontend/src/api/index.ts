@@ -1,5 +1,6 @@
+// src/api/index.ts
 import axios from 'axios';
-import type { Chat, ChatResponse } from '../types';
+import type { Chat, ChatResponse, Tool, ToolCreate } from '../types';
 
 // Type guard for axios errors
 type AxiosErrorLike = {
@@ -143,6 +144,51 @@ export const chatApi = {
   deleteChat: async (chatId: number): Promise<void> => {
     try {
       await api.delete(`/${chatId}`);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  // Tool-related API methods
+  listTools: async (): Promise<Tool[]> => {
+    try {
+      const { data } = await api.get<Tool[]>('/tools/');
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  createTool: async (tool: ToolCreate): Promise<Tool> => {
+    try {
+      const { data } = await api.post<Tool>('/tools/', tool);
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  updateTool: async (toolId: number, tool: Partial<ToolCreate>): Promise<Tool> => {
+    try {
+      const { data } = await api.patch<Tool>(`/tools/${toolId}`, tool);
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  deleteTool: async (toolId: number): Promise<void> => {
+    try {
+      await api.delete(`/tools/${toolId}`);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  assignToolToChat: async (chatId: number, toolId: number): Promise<Chat> => {
+    try {
+      const { data } = await api.put<Chat>(`/${chatId}/tool/${toolId}`);
+      return data;
     } catch (error) {
       throw handleApiError(error);
     }
