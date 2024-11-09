@@ -1,11 +1,13 @@
 // src/types/index.ts
+
 export type MessageRole = 'user' | 'assistant' | 'system';
 
 export interface ChatMessage {
   role: MessageRole;
   content: string;
   author_name?: string;
-  id?: number;
+  uuid: string;
+  parent_message_uuid?: string | null;
 }
 
 export interface Chat {
@@ -14,25 +16,13 @@ export interface Chat {
   new_message: string | null;
   history: ChatMessage[];
   system_string: string | null;
-  active_tool_id?: number; // Add this field to track the assigned tool
+  active_tool_id?: number; // To track the assigned tool
 }
 
 export interface ChatResponse extends Chat {}
 
 export interface MessageCreate {
   content: string;
-}
-
-// Thought Process related types
-export interface ThoughtStep {
-  step: number;
-  thought: string;
-  reasoning: string;
-}
-  
-export interface ThoughtProcess {
-  thought_process: ThoughtStep[];
-  final_answer: string;
 }
 
 // Tool-related types

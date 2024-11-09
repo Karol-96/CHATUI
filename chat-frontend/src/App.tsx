@@ -1,9 +1,11 @@
 // src/App.tsx
+
 import './index.css';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Chat, ChatMessage as ChatMessageType, Tool, ToolCreate } from './types';
 import ChatMessage from './components/ChatMessage';
+import UserPreviewMessage from './components/UserPreviewMessage'; // Import the new component
 import { chatApi } from './api';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingMessage } from './components/LoadingMessage';
@@ -29,7 +31,7 @@ const ErrorDisplay: React.FC<{ error: string | null; onDismiss: () => void }> = 
   );
 };
 
-export default function Component() {
+export default function App() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
   const [input, setInput] = useState('');
@@ -42,6 +44,9 @@ export default function Component() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [activeTool, setActiveTool] = useState<number | null>(null);
   const [loadingTools, setLoadingTools] = useState(false);
+
+  // New state for pending user message
+  const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
 
   const generateChatTitle = (chat: Chat): string => {
     const firstUserMessage = chat.history.find(message => message.role === 'user');
@@ -110,57 +115,29 @@ export default function Component() {
     const messageContent = input.trim();
     setInput('');
 
-    const messageId = Date.now();
-    
-    const userMessage: ChatMessageType = {
-      role: 'user',
-      content: messageContent,
-      id: messageId
-    };
-
-    setChats(prevChats =>
-      prevChats.map(chat =>
-        chat.id === selectedChatId
-          ? { 
-              ...chat, 
-              history: [...chat.history, userMessage]
-            }
-          : chat
-      )
-    );
+    // Set the pending user message
+    setPendingUserMessage(messageContent);
 
     setLoading(true);
-    sendMessageAsync(selectedChatId, messageContent, messageId);
+    sendMessageAsync(selectedChatId, messageContent);
   };
 
-  const sendMessageAsync = async (chatId: number, content: string, messageId: number) => {
+  const sendMessageAsync = async (chatId: number, content: string) => {
     try {
       const updatedChat = await chatApi.sendMessage(chatId, content);
       
       setChats(prevChats =>
-        prevChats.map(chat => {
-          if (chat.id !== chatId) return chat;
-          
-          const userMessageIndex = chat.history
-            .map((msg, index) => ({ msg, index }))
-            .filter(({ msg }) => msg.role === 'user' && msg.id === messageId)
-            .pop()?.index ?? -1;
-          
-          if (userMessageIndex === -1) return updatedChat;
-
-          const newHistory = [
-            ...chat.history.slice(0, userMessageIndex + 1),
-            ...updatedChat.history.slice(updatedChat.history.length - 1)
-          ];
-          
-          return {
-            ...chat,
-            history: newHistory
-          };
-        })
+        prevChats.map(chat =>
+          chat.id === chatId ? updatedChat : chat
+        )
       );
+
+      // Clear the pending user message after successful send
+      setPendingUserMessage(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
+      // Clear the pending user message on error
+      setPendingUserMessage(null);
     } finally {
       setLoading(false);
     }
@@ -268,11 +245,40 @@ export default function Component() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedChat?.history, loading, scrollToBottom]);
+  }, [selectedChat?.history, loading, scrollToBottom, pendingUserMessage]);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, [selectedChat]);
+
+  // Function to order messages based on parent_message_uuid
+  const getOrderedMessages = (messages: ChatMessageType[]) => {
+    const messageMap: { [uuid: string]: ChatMessageType } = {};
+    messages.forEach(msg => {
+      if (msg.uuid) { // Ensure msg.uuid exists
+        messageMap[msg.uuid] = msg;
+      }
+    });
+
+    // Find root messages (those without parent_message_uuid)
+    const rootMessages = messages.filter(msg => !msg.parent_message_uuid);
+    const orderedMessages: ChatMessageType[] = [];
+
+    const traverse = (message: ChatMessageType) => {
+      orderedMessages.push(message);
+      // Find child message
+      const childMessage = messages.find(
+        msg => msg.parent_message_uuid === message.uuid
+      );
+      if (childMessage) {
+        traverse(childMessage);
+      }
+    };
+
+    rootMessages.forEach(rootMessage => traverse(rootMessage));
+
+    return orderedMessages;
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -304,8 +310,8 @@ export default function Component() {
                   {chat.history.length > 0 && (
                     <div className="text-sm text-gray-500 truncate">
                       {lastMessage.role === 'assistant' 
-                        ? 'AI: ' + lastMessage.content.substring(0, 30) + '...'
-                        : lastMessage.content.substring(0, 30) + '...'}
+                        ? 'AI: ' + (lastMessage.content.length > 30 ? lastMessage.content.substring(0, 30) + '...' : lastMessage.content)
+                        : (lastMessage.content.length > 30 ? lastMessage.content.substring(0, 30) + '...' : lastMessage.content)}
                     </div>
                   )}
                 </div>
@@ -315,6 +321,7 @@ export default function Component() {
                     handleDeleteChat(chat.id);
                   }}
                   className="absolute top-2 right-2 p-1 text-gray-500 hover:text-red-500"
+                  title="Delete chat"
                 >
                   <X size={16} />
                 </button>
@@ -342,6 +349,7 @@ export default function Component() {
               <button
                 onClick={handleClearHistory}
                 className="text-red-600 hover:text-red-800 transition duration-200"
+                title="Clear chat history"
               >
                 Clear History
               </button>
@@ -349,14 +357,23 @@ export default function Component() {
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <ErrorBoundary>
-                {selectedChat.history.map((message, index) => (
-                  message.role !== 'system' && (
-                    <ChatMessage 
-                      key={`${message.role}-${index}`}
-                      message={message}
-                    />
-                  )
-                ))}
+                {selectedChat.history.length > 0 ? (
+                  getOrderedMessages(selectedChat.history).map((message, index) => (
+                    message.role !== 'system' && (
+                      <ChatMessage 
+                        key={message.uuid}
+                        message={message}
+                      />
+                    )
+                  ))
+                ) : (
+                  <div className="text-gray-500">No messages yet. Start the conversation!</div>
+                )}
+                {/* Render the pending user message */}
+                {pendingUserMessage && (
+                  <UserPreviewMessage content={pendingUserMessage} />
+                )}
+                {/* Render the assistant's loading message */}
                 {loading && <LoadingMessage />}
                 <div ref={messagesEndRef} />
               </ErrorBoundary>
@@ -378,6 +395,7 @@ export default function Component() {
                 type="submit"
                 disabled={!input.trim() || loading}
                 className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Send message"
               >
                 <Send className="h-5 w-5" />
               </button>

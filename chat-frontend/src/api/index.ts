@@ -1,4 +1,5 @@
 // src/api/index.ts
+
 import axios from 'axios';
 import type { Chat, ChatResponse, Tool, ToolCreate } from '../types';
 
@@ -98,6 +99,15 @@ export const chatApi = {
     }
   },
 
+  getChat: async (chatId: number): Promise<Chat> => {
+    try {
+      const { data } = await api.get<ChatResponse>(`/${chatId}`);
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
   createChat: async (): Promise<Chat> => {
     try {
       const { data } = await api.post<ChatResponse>('/');
@@ -108,28 +118,15 @@ export const chatApi = {
   },
 
   sendMessage: async (chatId: number, content: string): Promise<Chat> => {
-    let lastError: unknown;
-    
-    for (let i = 0; i < MAX_RETRIES; i++) {
-      try {
-        const { data } = await api.post<ChatResponse>(
-          `/${chatId}/messages/`,
-          { content }
-        );
-        return data;
-      } catch (error) {
-        lastError = error;
-        
-        if (isAxiosError(error) && (!error.response || error.code === 'ECONNABORTED')) {
-          console.log(`Retry attempt ${i + 1} of ${MAX_RETRIES}`);
-          await delay(BASE_DELAY * Math.pow(2, i));
-          continue;
-        }
-        throw handleApiError(error);
-      }
+    try {
+      const { data } = await api.post<ChatResponse>(
+        `/${chatId}/messages/`,
+        { content }
+      );
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
     }
-    
-    throw handleApiError(lastError);
   },
 
   clearHistory: async (chatId: number): Promise<Chat> => {

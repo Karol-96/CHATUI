@@ -1,3 +1,4 @@
+//chat-frontend\src\components\LoadingMessage.tsx
 import React from 'react'
 import { MessageSquare } from 'lucide-react'
 
