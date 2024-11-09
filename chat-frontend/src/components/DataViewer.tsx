@@ -1,23 +1,22 @@
-// src/components/DataViewer.tsx
-
+// DataViewer.tsx
 import React from 'react';
 import { ChevronRight, Circle, Square, Triangle, Hash, List } from 'lucide-react';
 import CopyButton from './CopyButton';
 
 interface DataViewerProps {
   data: unknown;
-  toolName?: string; // Add toolName prop
+  tool_name?: string;  // Changed to match server property name
 }
 
 interface DataNodeProps {
   data: unknown;
   path?: string;
   depth?: number;
-  toolName?: string; // Pass toolName down to children
+  tool_name?: string;  // Changed to match server property name
 }
 
-const DataViewer: React.FC<DataViewerProps> = ({ data, toolName }) => {
-  const DataNode: React.FC<DataNodeProps> = ({ data, path = '', depth = 0, toolName }) => {
+const DataViewer: React.FC<DataViewerProps> = ({ data, tool_name }) => {  // Changed prop name
+  const DataNode: React.FC<DataNodeProps> = ({ data, path = '', depth = 0, tool_name }) => {  // Changed prop name
     const [isExpanded, setIsExpanded] = React.useState(true);
     const isObject = data !== null && typeof data === 'object';
 
@@ -35,8 +34,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data, toolName }) => {
       return String(value);
     };
 
-    // Calculate indentation based on depth
-    const indentation = depth * 16; // 16px per depth level
+    const indentation = depth * 16;
 
     return (
       <div className="relative group" style={{ marginLeft: indentation }}>
@@ -56,8 +54,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data, toolName }) => {
             <div className="w-4 h-4 flex items-center justify-center">
               {getTypeIcon(data)}
             </div>
-            {/* Use toolName if path is empty */}
-            <span className="font-mono text-gray-700">{path || toolName || 'Root'}</span>
+            <span className="font-mono text-gray-700">{path || tool_name || 'Root'}</span>
             <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
               {Array.isArray(data) ? `array[${data.length}]` : `object{${Object.keys(data).length}}`}
             </span>
@@ -90,7 +87,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data, toolName }) => {
                     data={item}
                     path={`[${index}]`}
                     depth={depth + 1}
-                    toolName={toolName} // Pass toolName to children
+                    tool_name={tool_name}
                   />
                 ))
               : Object.entries(data as Record<string, unknown>).map(([key, value]) => (
@@ -99,7 +96,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data, toolName }) => {
                     data={value}
                     path={key}
                     depth={depth + 1}
-                    toolName={toolName} // Pass toolName to children
+                    tool_name={tool_name}
                   />
                 ))}
           </div>
@@ -110,7 +107,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data, toolName }) => {
 
   return (
     <div className="bg-white rounded w-full p-2 overflow-auto">
-      <DataNode data={data} toolName={toolName} />
+      <DataNode data={data} tool_name={tool_name} />
     </div>
   );
 };

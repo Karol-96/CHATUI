@@ -2,14 +2,16 @@
 
 export type MessageRole = 'user' | 'assistant' | 'system';
 
+// First update types/index.ts to match the server response
 export interface ChatMessage {
   role: MessageRole;
   content: string;
   author_name?: string;
   uuid: string;
   parent_message_uuid?: string | null;
-  toolName?: string; // New field to store the tool's name
+  tool_name?: string; // Changed to match server-side property name
 }
+
 
 export interface Chat {
   id: number;

@@ -368,7 +368,6 @@ export default function App() {
                       <ChatMessage 
                         key={message.uuid}
                         message={message}
-                        toolName={activeToolName} // Pass toolName prop
                       />
                     )
                   ))
