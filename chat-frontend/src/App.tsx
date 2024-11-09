@@ -3,7 +3,7 @@
 import './index.css';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Chat, ChatMessage as ChatMessageType, Tool, ToolCreate } from './types';
+import { Chat, ChatMessage as ChatMessageType, Tool, ToolCreate, MessageRole } from './types';
 import ChatMessage from './components/ChatMessage';
 import UserPreviewMessage from './components/UserPreviewMessage'; // Import the new component
 import { chatApi } from './api';
@@ -234,6 +234,11 @@ export default function App() {
 
   const selectedChat = chats.find(chat => chat.id === selectedChatId);
 
+  // Determine the active tool's name
+  const activeToolName = activeTool !== null 
+    ? tools.find(tool => tool.id === activeTool)?.schema_name || 'Unknown Tool' 
+    : 'Unknown Tool';
+
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ 
@@ -358,11 +363,12 @@ export default function App() {
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               <ErrorBoundary>
                 {selectedChat.history.length > 0 ? (
-                  getOrderedMessages(selectedChat.history).map((message, index) => (
+                  getOrderedMessages(selectedChat.history).map((message) => (
                     message.role !== 'system' && (
                       <ChatMessage 
                         key={message.uuid}
                         message={message}
+                        toolName={activeToolName} // Pass toolName prop
                       />
                     )
                   ))

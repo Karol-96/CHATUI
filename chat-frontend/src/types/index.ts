@@ -8,6 +8,7 @@ export interface ChatMessage {
   author_name?: string;
   uuid: string;
   parent_message_uuid?: string | null;
+  toolName?: string; // New field to store the tool's name
 }
 
 export interface Chat {

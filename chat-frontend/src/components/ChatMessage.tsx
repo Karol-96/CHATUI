@@ -17,9 +17,10 @@ interface ChatMessageType {
 
 interface ChatMessageProps {
   message: ChatMessageType | undefined;
+  toolName?: string; // Add toolName prop
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+const ChatMessage: React.FC<ChatMessageProps> = ({ message, toolName }) => {
   if (!message) {
     return (
       <div className="flex items-center justify-center p-4 bg-red-100 text-red-700 rounded-md">
@@ -34,7 +35,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   const renderAssistantContent = (content: string) => {
     try {
       const data = JSON.parse(content);
-      return <DataViewer data={data} />;
+      return <DataViewer data={data} toolName={toolName} />; // Pass toolName
     } catch (error) {
       console.error('Failed to parse content:', error);
       return <div className="whitespace-pre-wrap">{content}</div>;

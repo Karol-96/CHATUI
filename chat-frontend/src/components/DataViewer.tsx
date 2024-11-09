@@ -6,16 +6,18 @@ import CopyButton from './CopyButton';
 
 interface DataViewerProps {
   data: unknown;
+  toolName?: string; // Add toolName prop
 }
 
 interface DataNodeProps {
   data: unknown;
   path?: string;
   depth?: number;
+  toolName?: string; // Pass toolName down to children
 }
 
-const DataViewer: React.FC<DataViewerProps> = ({ data }) => {
-  const DataNode: React.FC<DataNodeProps> = ({ data, path = '', depth = 0 }) => {
+const DataViewer: React.FC<DataViewerProps> = ({ data, toolName }) => {
+  const DataNode: React.FC<DataNodeProps> = ({ data, path = '', depth = 0, toolName }) => {
     const [isExpanded, setIsExpanded] = React.useState(true);
     const isObject = data !== null && typeof data === 'object';
 
@@ -54,7 +56,8 @@ const DataViewer: React.FC<DataViewerProps> = ({ data }) => {
             <div className="w-4 h-4 flex items-center justify-center">
               {getTypeIcon(data)}
             </div>
-            <span className="font-mono text-gray-700">{path || 'Root'}</span>
+            {/* Use toolName if path is empty */}
+            <span className="font-mono text-gray-700">{path || toolName || 'Root'}</span>
             <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">
               {Array.isArray(data) ? `array[${data.length}]` : `object{${Object.keys(data).length}}`}
             </span>
@@ -87,6 +90,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data }) => {
                     data={item}
                     path={`[${index}]`}
                     depth={depth + 1}
+                    toolName={toolName} // Pass toolName to children
                   />
                 ))
               : Object.entries(data as Record<string, unknown>).map(([key, value]) => (
@@ -95,6 +99,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data }) => {
                     data={value}
                     path={key}
                     depth={depth + 1}
+                    toolName={toolName} // Pass toolName to children
                   />
                 ))}
           </div>
@@ -105,7 +110,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data }) => {
 
   return (
     <div className="bg-white rounded w-full p-2 overflow-auto">
-      <DataNode data={data} />
+      <DataNode data={data} toolName={toolName} />
     </div>
   );
 };
