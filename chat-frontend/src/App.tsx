@@ -12,6 +12,12 @@ import { LoadingMessage } from './components/LoadingMessage';
 import { Send, X } from 'lucide-react';
 import { ToolPanel } from './components/ToolPanel';
 
+// Add new interface and states at the top of the App component
+interface PendingMessage {
+  content: string;
+  timestamp: number;
+}
+
 const ErrorDisplay: React.FC<{ error: string | null; onDismiss: () => void }> = ({ 
   error, 
   onDismiss 
@@ -46,7 +52,8 @@ export default function App() {
   const [loadingTools, setLoadingTools] = useState(false);
 
   // New state for pending user message
-  const [pendingUserMessage, setPendingUserMessage] = useState<string | null>(null);
+  const [pendingMessages, setPendingMessages] = useState<Record<number, PendingMessage>>({});
+  const [loadingChats, setLoadingChats] = useState<Record<number, boolean>>({});
 
   const generateChatTitle = (chat: Chat): string => {
     const firstUserMessage = chat.history.find(message => message.role === 'user');
@@ -115,10 +122,19 @@ export default function App() {
     const messageContent = input.trim();
     setInput('');
 
-    // Set the pending user message
-    setPendingUserMessage(messageContent);
+    setPendingMessages(prev => ({
+      ...prev,
+      [selectedChatId]: {
+        content: messageContent,
+        timestamp: Date.now()
+      }
+    }));
 
-    setLoading(true);
+    setLoadingChats(prev => ({
+      ...prev,
+      [selectedChatId]: true
+    }));
+
     sendMessageAsync(selectedChatId, messageContent);
   };
 
@@ -132,14 +148,34 @@ export default function App() {
         )
       );
 
-      // Clear the pending user message after successful send
-      setPendingUserMessage(null);
+      // Clear states for this chat
+      setPendingMessages(prev => {
+        const newState = { ...prev };
+        delete newState[chatId];
+        return newState;
+      });
+
+      setLoadingChats(prev => {
+        const newState = { ...prev };
+        delete newState[chatId];
+        return newState;
+      });
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to send message');
-      // Clear the pending user message on error
-      setPendingUserMessage(null);
-    } finally {
-      setLoading(false);
+      
+      // Clear states on error
+      setPendingMessages(prev => {
+        const newState = { ...prev };
+        delete newState[chatId];
+        return newState;
+      });
+
+      setLoadingChats(prev => {
+        const newState = { ...prev };
+        delete newState[chatId];
+        return newState;
+      });
     }
   };
 
@@ -250,7 +286,12 @@ export default function App() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [selectedChat?.history, loading, scrollToBottom, pendingUserMessage]);
+  }, [
+    selectedChat?.history,
+    selectedChat?.id && pendingMessages[selectedChat.id],
+    selectedChat?.id && loadingChats[selectedChat.id],
+    scrollToBottom
+  ]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -258,10 +299,10 @@ export default function App() {
 
   // Function to order messages based on parent_message_uuid
   const getOrderedMessages = (messages: ChatMessageType[]) => {
-    const messageMap: { [uuid: string]: ChatMessageType } = {};
+    const messageMap: Record<string, ChatMessageType> = {};
     messages.forEach(msg => {
-      if (msg.uuid) { // Ensure msg.uuid exists
-        messageMap[msg.uuid] = msg;
+      if (msg.uuid) {
+        messageMap[msg.uuid.toString()] = msg;
       }
     });
 
@@ -284,6 +325,25 @@ export default function App() {
 
     return orderedMessages;
   };
+
+  // Add cleanup effect for stale messages
+  useEffect(() => {
+    const cleanup = setInterval(() => {
+      const now = Date.now();
+      setPendingMessages(prev => {
+        const newState = { ...prev };
+        Object.entries(newState).forEach(([chatIdStr, message]) => {
+          const chatId = parseInt(chatIdStr, 10); // Convert string to number
+          if (now - message.timestamp > 60000) {
+            delete newState[chatId];
+          }
+        });
+        return newState;
+      });
+    }, 10000);
+
+    return () => clearInterval(cleanup);
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -374,12 +434,12 @@ export default function App() {
                 ) : (
                   <div className="text-gray-500">No messages yet. Start the conversation!</div>
                 )}
-                {/* Render the pending user message */}
-                {pendingUserMessage && (
-                  <UserPreviewMessage content={pendingUserMessage} />
+                {selectedChat.id && pendingMessages[selectedChat.id] && (
+                  <UserPreviewMessage 
+                    content={pendingMessages[selectedChat.id].content} 
+                  />
                 )}
-                {/* Render the assistant's loading message */}
-                {loading && <LoadingMessage />}
+                {selectedChat.id && loadingChats[selectedChat.id] && <LoadingMessage />}
                 <div ref={messagesEndRef} />
               </ErrorBoundary>
             </div>
@@ -398,7 +458,7 @@ export default function App() {
               />
               <button
                 type="submit"
-                disabled={!input.trim() || loading}
+                disabled={!input.trim() || (selectedChatId !== null && loadingChats[selectedChatId]) || false}
                 className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Send message"
               >
