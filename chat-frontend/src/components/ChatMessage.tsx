@@ -20,7 +20,7 @@ interface ChatMessageProps {
   message: ChatMessageType | undefined;
 }
 
-const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
+export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
   if (!message) {
     return (
       <div className="flex items-center justify-center p-4 bg-red-100 text-red-700 rounded-md">
@@ -83,5 +83,3 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
     </div>
   );
 };
-
-export default ChatMessage;

@@ -1,52 +1,26 @@
 // src/types/index.ts
 
-export type MessageRole = 'user' | 'assistant' | 'system';
-
-// First update types/index.ts to match the server response
-export interface ChatMessage {
-  role: MessageRole;
-  content: string;
-  author_name?: string;
-  uuid: string;
-  parent_message_uuid?: string | null;
-  tool_name?: string; // Changed to match server-side property name
-}
-
-
+// Core chat interfaces used across components
 export interface Chat {
-  id: number;
-  uuid: string;
-  new_message: string | null;
+  id: number;  // Changed from string to number to match API
+  title: string;
+  toolId?: string;
+  createdAt: string;
   history: ChatMessage[];
-  system_string: string | null;
-  active_tool_id?: number; // To track the assigned tool
+  active_tool_id?: number | null;
 }
 
-export interface ChatResponse extends Chat {}
-
-export interface MessageCreate {
+export interface ChatMessage {
+  id: string;
+  chatId: string;
+  role: 'user' | 'assistant' | 'system';
   content: string;
+  createdAt: string;
+  uuid?: string;  // Added back for ChatWindow compatibility
+  data?: any;
 }
 
-// Tool-related types
-export interface Tool {
-  id: number;
-  schema_name: string;
-  schema_description: string;
-  instruction_string: string;
-  json_schema: Record<string, any>;
-  strict_schema: boolean;
-}
-
-export interface ToolCreate {
-  schema_name: string;
-  schema_description: string;
-  instruction_string: string;
-  json_schema: Record<string, any>;
-  strict_schema: boolean;
-}
-
-// API Error types
+// API Error types used across components
 export interface ApiErrorResponse {
   detail?: string;
   message?: string;

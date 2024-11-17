@@ -106,7 +106,7 @@ const DataViewer: React.FC<DataViewerProps> = ({ data, tool_name }) => {  // Cha
   };
 
   return (
-    <div className="bg-white rounded w-full p-2 overflow-auto">
+    <div className="rounded w-full p-2 overflow-auto">
       <DataNode data={data} tool_name={tool_name} />
     </div>
   );

@@ -1,7 +1,24 @@
 // src/components/ToolPanel.tsx
 import React, { useState, useCallback } from 'react';
-import { Tool, ToolCreate } from '../types';
 import { Plus, Settings, Trash2, Eye, EyeOff, Edit2, RefreshCw, CheckCircle } from 'lucide-react';
+
+// Tool-specific interfaces
+export interface Tool {
+  id: number;
+  schema_name: string;
+  schema_description: string;
+  instruction_string: string;
+  json_schema: Record<string, any>;
+  strict_schema: boolean;
+}
+
+export interface ToolCreate {
+  schema_name: string;
+  schema_description: string;
+  instruction_string: string;
+  json_schema: Record<string, any>;
+  strict_schema: boolean;
+}
 
 interface ToolPanelProps {
   tools: Tool[];
@@ -250,8 +267,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
         {showCreateForm ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <input
-                type="text"
+              <textarea
                 placeholder="Schema Name"
                 value={newTool.schema_name}
                 onChange={(e) => setNewTool({ ...newTool, schema_name: e.target.value })}
@@ -265,9 +281,17 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
             </div>
             <div>
               <textarea
-                placeholder="Description"
+                placeholder="Schema Description"
                 value={newTool.schema_description}
                 onChange={(e) => setNewTool({ ...newTool, schema_description: e.target.value })}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+            <div>
+              <textarea
+                placeholder="Instruction String"
+                value={newTool.instruction_string}
+                onChange={(e) => setNewTool({ ...newTool, instruction_string: e.target.value })}
                 className="w-full p-2 border rounded"
               />
             </div>
@@ -283,6 +307,15 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
               {errors.json_schema && (
                 <p className="text-red-500 text-xs mt-1">{errors.json_schema}</p>
               )}
+            </div>
+            <div>
+              <input
+                type="checkbox"
+                checked={newTool.strict_schema}
+                onChange={(e) => setNewTool({ ...newTool, strict_schema: e.target.checked })}
+                className="mr-2"
+              />
+              <label>Strict Schema</label>
             </div>
             <div className="flex gap-2">
               <button

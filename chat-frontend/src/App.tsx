@@ -2,63 +2,157 @@
 
 import './index.css';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Chat, ChatMessage as ChatMessageType, Tool, ToolCreate } from './types';
-import ChatMessage from './components/ChatMessage';
-import UserPreviewMessage from './components/UserPreviewMessage';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import type { Chat, ChatMessage } from './types';
+import type { Tool, ToolCreate } from './components/ToolPanel';
+import { ChatWindow } from './components/ChatWindow';
+import { TabBar } from './components/TabBar';
 import { chatApi } from './api';
-import { ErrorDisplay } from './components/ErrorDisplay';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { LoadingMessage } from './components/LoadingMessage';
 import { X } from 'lucide-react';
 import { ToolPanel } from './components/ToolPanel';
-import { ChatInput } from './components/ChatInput';
+import { ErrorDisplay } from './components/ErrorDisplay';
+import { ChatControlBar } from './components/ChatControlBar';
 
-// Add new interface and states at the top of the App component
-interface PendingMessage {
-  content: string;
-  timestamp: number;
+interface ChatState {
+  chat: Chat;
+  messages: ChatMessage[];
+  error: string | null;
+  isLoading: boolean;
+  previewMessage: string | null;
 }
 
-export default function App() {
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+function App() {
+  // All chats that exist
+  const [chats, setAllChats] = useState<Chat[]>([]);
+  // Only the chats that are open in tabs
+  const [openChats, setOpenChats] = useState<Record<string, ChatState>>({});
+  const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const [tabOrder, setTabOrder] = useState<number[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Tool-related states
   const [tools, setTools] = useState<Tool[]>([]);
   const [activeTool, setActiveTool] = useState<number | null>(null);
   const [loadingTools, setLoadingTools] = useState(false);
 
-  // New state for pending user message
-  const [pendingMessages, setPendingMessages] = useState<Record<number, PendingMessage>>({});
-  const [loadingChats, setLoadingChats] = useState<Record<number, boolean>>({});
-
+  // Generate chat title from first message
   const generateChatTitle = (chat: Chat): string => {
     const firstUserMessage = chat.history.find(message => message.role === 'user');
     if (firstUserMessage) {
-      const words = firstUserMessage.content.split(' ').slice(0, 3).join(' ');
-      return words.length > 20 ? words.substring(0, 20) + '...' : words;
+      return firstUserMessage.content.split(' ').slice(0, 3).join(' ');
     }
-    return `New Chat ${chat.id}`;
+    return `Chat ${chat.id}`;
   };
 
+  // Open a chat in a new tab
+  const openChatTab = useCallback((chat: Chat) => {
+    console.log('Opening chat tab:', chat);
+    const tabId = chat.id.toString();
+    
+    // If not already open, add to openChats
+    if (!openChats[tabId]) {
+      console.log('Chat not in openChats, adding:', chat);
+      setOpenChats(prev => ({
+        ...prev,
+        [tabId]: {
+          chat,
+          messages: chat.history || [],
+          error: null,
+          isLoading: false,
+          previewMessage: null
+        }
+      }));
+
+      // Add to tabOrder if not already there
+      setTabOrder(prev => {
+        if (!prev.includes(chat.id)) {
+          console.log('Adding chat to tab order:', chat.id);
+          return [...prev, chat.id];
+        }
+        return prev;
+      });
+    } else {
+      console.log('Chat already open:', chat);
+    }
+    
+    console.log('Setting active tab ID:', tabId);
+    setActiveTabId(tabId);
+  }, [openChats]);
+
+  // Load existing chats
   const loadChats = useCallback(async () => {
     try {
-      setLoading(true);
       const loadedChats = await chatApi.listChats();
-      setChats(loadedChats);
-      if (loadedChats.length > 0 && !selectedChatId) {
-        setSelectedChatId(loadedChats[0].id);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load chats');
-    } finally {
-      setLoading(false);
+      setAllChats(loadedChats);
+
+      // For any already open chats, update their data
+      setOpenChats(prev => {
+        const updatedChats = { ...prev };
+        Object.keys(prev).forEach(tabId => {
+          const loadedChat = loadedChats.find(c => c.id.toString() === tabId);
+          if (loadedChat) {
+            updatedChats[tabId] = {
+              ...updatedChats[tabId],
+              chat: loadedChat,
+              messages: loadedChat.history || []
+            };
+          }
+        });
+        return updatedChats;
+      });
+    } catch (error) {
+      console.error('Failed to load chats:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load chats');
     }
-  }, [selectedChatId]);
+  }, []);
+
+  // Initial load
+  useEffect(() => {
+    loadChats();
+  }, [loadChats]);
+
+  // Update tab order when chats change
+  useEffect(() => {
+    setTabOrder(prev => {
+      const openChatIds = Object.keys(openChats).map(id => parseInt(id, 10));
+      // Keep existing order for open tabs
+      const existingOrder = prev.filter(id => openChatIds.includes(id));
+      // Add newly opened tabs to the end
+      const newTabs = openChatIds.filter(id => !prev.includes(id));
+      return [...existingOrder, ...newTabs];
+    });
+  }, [openChats]);
+
+  // Close a tab (but don't delete the chat)
+  const handleTabClose = useCallback((tabId: string) => {
+    // Remove from openChats
+    const { [tabId]: removedChat, ...remainingChats } = openChats;
+    setOpenChats(remainingChats);
+
+    // Update active tab if needed
+    if (activeTabId === tabId) {
+      const remainingTabs = Object.keys(remainingChats);
+      setActiveTabId(remainingTabs.length > 0 ? remainingTabs[0] : null);
+    }
+
+    // Remove from tab order
+    setTabOrder(prev => prev.filter(id => id !== parseInt(tabId, 10)));
+  }, [activeTabId, openChats]);
+
+  // Delete a chat entirely
+  const handleDeleteChat = useCallback(async (chatId: number) => {
+    try {
+      await chatApi.deleteChat(chatId);
+      setAllChats(prev => prev.filter(chat => chat.id !== chatId));
+      
+      // Close its tab if it's open
+      const tabId = chatId.toString();
+      if (openChats[tabId]) {
+        handleTabClose(tabId);
+      }
+    } catch (error) {
+      console.error('Failed to delete chat:', error);
+      setError(error instanceof Error ? error.message : 'Failed to delete chat');
+    }
+  }, [openChats, handleTabClose]);
 
   const loadTools = useCallback(async () => {
     try {
@@ -72,102 +166,80 @@ export default function App() {
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
-    loadChats();
     loadTools();
-  }, [loadChats, loadTools]);
+  }, [loadTools]);
 
+  // Update active tool when chat changes
   useEffect(() => {
-    const chat = chats.find(chat => chat.id === selectedChatId);
-    if (chat && chat.active_tool_id) {
-      setActiveTool(chat.active_tool_id);
-    } else {
-      setActiveTool(null);
+    if (activeTabId) {
+      const chatState = openChats[activeTabId];
+      if (chatState?.chat.active_tool_id) {
+        setActiveTool(chatState.chat.active_tool_id);
+      } else {
+        setActiveTool(null);
+      }
     }
-  }, [selectedChatId, chats]);
+  }, [activeTabId, openChats]);
 
-  const handleNewChat = async () => {
+  const createNewChat = useCallback(async () => {
     try {
       const newChat = await chatApi.createChat();
-      setChats(prevChats => [...prevChats, newChat]);
-      setSelectedChatId(newChat.id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create chat');
+      
+      setAllChats(prev => [...prev, newChat]);
+      openChatTab(newChat);
+    } catch (error) {
+      console.error('Failed to create chat:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create chat');
     }
-  };
+  }, []);
 
-  const sendMessageAsync = async (chatId: number, content: string) => {
+  const sendMessageAsync = useCallback(async (content: string) => {
+    if (!activeTabId) return;
+    
+    const chatState = openChats[activeTabId];
+    if (!chatState) return;
+
+    const chatId = parseInt(activeTabId, 10);
+
+    setOpenChats(prev => ({
+      ...prev,
+      [activeTabId]: {
+        ...prev[activeTabId],
+        isLoading: true,
+        previewMessage: content,
+        error: null,
+      }
+    }));
+
     try {
       const updatedChat = await chatApi.sendMessage(chatId, content);
-      
-      setChats(prevChats =>
-        prevChats.map(chat =>
-          chat.id === chatId ? updatedChat : chat
-        )
-      );
 
-      // Clear states for this chat
-      setPendingMessages(prev => {
-        const newState = { ...prev };
-        delete newState[chatId];
-        return newState;
-      });
-
-      setLoadingChats(prev => {
-        const newState = { ...prev };
-        delete newState[chatId];
-        return newState;
-      });
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send message');
-      
-      // Clear states on error
-      setPendingMessages(prev => {
-        const newState = { ...prev };
-        delete newState[chatId];
-        return newState;
-      });
-
-      setLoadingChats(prev => {
-        const newState = { ...prev };
-        delete newState[chatId];
-        return newState;
-      });
+      setOpenChats(prev => ({
+        ...prev,
+        [activeTabId]: {
+          ...prev[activeTabId],
+          chat: updatedChat,
+          messages: updatedChat.history || [],
+          isLoading: false,
+          previewMessage: null,
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setOpenChats(prev => ({
+        ...prev,
+        [activeTabId]: {
+          ...prev[activeTabId],
+          error: error instanceof Error ? error.message : 'Failed to send message',
+          isLoading: false,
+          previewMessage: null,
+        }
+      }));
     }
-  };
+  }, [activeTabId, openChats]);
 
-  const handleClearHistory = async () => {
-    if (!selectedChatId) return;
-
-    try {
-      setLoading(true);
-      const updatedChat = await chatApi.clearHistory(selectedChatId);
-      setChats(prevChats =>
-        prevChats.map(chat =>
-          chat.id === selectedChatId ? updatedChat : chat
-        )
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to clear history');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteChat = async (chatId: number) => {
-    try {
-      await chatApi.deleteChat(chatId);
-      setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
-      if (selectedChatId === chatId) {
-        setSelectedChatId(null);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete chat');
-    }
-  };
-
-  // ToolPanel handlers
   const handleCreateTool = async (tool: ToolCreate) => {
     try {
       setLoadingTools(true);
@@ -204,133 +276,98 @@ export default function App() {
     }
   };
 
-  const handleAssignTool = async (toolId: number) => {
-    if (!selectedChatId) return;
+  const handleAssignTool = useCallback(async (chatId: number, toolId: number) => {
     try {
-      setLoadingTools(true);
-      const updatedChat = await chatApi.assignToolToChat(selectedChatId, toolId);
-      setChats(prevChats =>
-        prevChats.map(chat =>
-          chat.id === selectedChatId ? updatedChat : chat
-        )
-      );
-      setActiveTool(toolId);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to assign tool');
-    } finally {
-      setLoadingTools(false);
-    }
-  };
-
-  const handleRefreshTools = async () => {
-    await loadTools();
-  };
-
-  const selectedChat = chats.find(chat => chat.id === selectedChatId);
-
-  // Determine the active tool's name
-  const activeToolName = activeTool !== null 
-    ? tools.find(tool => tool.id === activeTool)?.schema_name || 'Unknown Tool' 
-    : 'Unknown Tool';
-
-  const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: "smooth",
-        block: "end"
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [
-    selectedChat?.history,
-    selectedChat?.id && pendingMessages[selectedChat.id],
-    selectedChat?.id && loadingChats[selectedChat.id],
-    scrollToBottom
-  ]);
-
-  // Function to order messages based on parent_message_uuid
-  const getOrderedMessages = (messages: ChatMessageType[]) => {
-    const messageMap: Record<string, ChatMessageType> = {};
-    messages.forEach(msg => {
-      if (msg.uuid) {
-        messageMap[msg.uuid.toString()] = msg;
-      }
-    });
-
-    // Find root messages (those without parent_message_uuid)
-    const rootMessages = messages.filter(msg => !msg.parent_message_uuid);
-    const orderedMessages: ChatMessageType[] = [];
-
-    const traverse = (message: ChatMessageType) => {
-      orderedMessages.push(message);
-      // Find child message
-      const childMessage = messages.find(
-        msg => msg.parent_message_uuid === message.uuid
-      );
-      if (childMessage) {
-        traverse(childMessage);
-      }
-    };
-
-    rootMessages.forEach(rootMessage => traverse(rootMessage));
-
-    return orderedMessages;
-  };
-
-  // Add cleanup effect for stale messages
-  useEffect(() => {
-    const cleanup = setInterval(() => {
-      const now = Date.now();
-      setPendingMessages(prev => {
-        const newState = { ...prev };
-        Object.entries(newState).forEach(([chatIdStr, message]) => {
-          const chatId = parseInt(chatIdStr, 10); // Convert string to number
-          if (now - message.timestamp > 60000) {
-            delete newState[chatId];
+      const updatedChat = await chatApi.assignToolToChat(chatId, toolId);
+      
+      setAllChats(prev => prev.map(chat => 
+        chat.id === chatId ? updatedChat : chat
+      ));
+      
+      // Update the open chat if it exists
+      const tabId = chatId.toString();
+      if (openChats[tabId]) {
+        setOpenChats(prev => ({
+          ...prev,
+          [tabId]: {
+            ...prev[tabId],
+            chat: updatedChat,
+            messages: updatedChat.history || [],
           }
-        });
-        return newState;
-      });
-    }, 10000);
+        }));
+      }
+      
+      setActiveTool(toolId);
+    } catch (error) {
+      console.error('Failed to assign tool:', error);
+      setError(error instanceof Error ? error.message : 'Failed to assign tool');
+    }
+  }, [openChats]);
 
-    return () => clearInterval(cleanup);
+  const handleClearHistory = async (chatId: number) => {
+    try {
+      const updatedChat = await chatApi.clearHistory(chatId);
+      const tabId = chatId.toString();
+      
+      setOpenChats(prev => ({
+        ...prev,
+        [tabId]: {
+          ...prev[tabId],
+          chat: updatedChat,
+          messages: updatedChat.history || [],
+        }
+      }));
+    } catch (error) {
+      console.error('Failed to clear history:', error);
+      setError(error instanceof Error ? error.message : 'Failed to clear history');
+    }
+  };
+
+  const handleTabReorder = useCallback((fromIndex: number, toIndex: number) => {
+    setTabOrder(prev => {
+      const newOrder = [...prev];
+      const [movedItem] = newOrder.splice(fromIndex, 1);
+      newOrder.splice(toIndex, 0, movedItem);
+      return newOrder;
+    });
   }, []);
+
+  // Get sorted chats based on tab order (only for open tabs)
+  const sortedOpenChats = useMemo(() => {
+    const chatMap = new Map(chats.map(chat => [chat.id, chat]));
+    return tabOrder
+      .map(id => chatMap.get(id))
+      .filter((chat): chat is Chat => chat !== undefined && chat.id.toString() in openChats);
+  }, [chats, tabOrder, openChats]);
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <ErrorDisplay error={error} onDismiss={() => setError(null)} />
-      
       {/* Left Sidebar - Chat List */}
       <div className="w-64 border-r border-gray-200 bg-white flex flex-col">
         <div className="p-4 border-b border-gray-200">
-          <h1 className="text-2xl font-bold">Structured Chats</h1>
+          <h2 className="text-lg font-semibold text-gray-900">Chats</h2>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto">
-          {chats.map(chat => {
-            const chatTitle = generateChatTitle(chat);
+          {chats.map((chat) => {
+            const title = generateChatTitle(chat);
             const lastMessage = chat.history[chat.history.length - 1];
             
             return (
               <div
                 key={chat.id}
                 className={`p-4 cursor-pointer border-b border-gray-100 ${
-                  selectedChatId === chat.id ? 'bg-blue-50' : 'hover:bg-gray-50'
+                  activeTabId === chat.id.toString() ? 'bg-blue-50' : 'hover:bg-gray-50'
                 } relative`}
+                onClick={() => openChatTab(chat)}
               >
-                <div 
-                  onClick={() => setSelectedChatId(chat.id)}
-                  className="pr-8"
-                >
-                  <div className="font-medium">{chatTitle}</div>
+                <div className="pr-8">
+                  <div className="font-medium">{title}</div>
                   {chat.history.length > 0 && (
                     <div className="text-sm text-gray-500 truncate">
                       {lastMessage.role === 'assistant' 
-                        ? 'AI: ' + (lastMessage.content.length > 30 ? lastMessage.content.substring(0, 30) + '...' : lastMessage.content)
-                        : (lastMessage.content.length > 30 ? lastMessage.content.substring(0, 30) + '...' : lastMessage.content)}
+                        ? 'AI: ' + lastMessage.content
+                        : lastMessage.content}
                     </div>
                   )}
                 </div>
@@ -351,7 +388,7 @@ export default function App() {
 
         <div className="p-4 border-t border-gray-200">
           <button
-            onClick={handleNewChat}
+            onClick={createNewChat}
             className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200"
           >
             New Chat
@@ -359,89 +396,76 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main Content - Chat Messages */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
-        {selectedChat ? (
-          <>
-
-            <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Structured Chat - Conversation {selectedChat.id}</h2>
-              <button
-                onClick={handleClearHistory}
-                className="text-red-600 hover:text-red-800 transition duration-200"
-                title="Clear chat history"
-              >
-                Clear History
-              </button>
+        <header className="bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex justify-between items-center px-4 py-4">
+              <h1 className="text-lg font-semibold text-gray-900">Parallel Chat UI</h1>
             </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              <ErrorBoundary>
-                {selectedChat.history.length > 0 ? (
-                  getOrderedMessages(selectedChat.history).map((message) => (
-                    message.role !== 'system' && (
-                      <ChatMessage 
-                        key={message.uuid}
-                        message={message}
-                      />
-                    )
-                  ))
-                ) : (
-                  <div className="text-gray-500">No messages yet. Start the conversation!</div>
-                )}
-                {selectedChat.id && pendingMessages[selectedChat.id] && (
-                  <UserPreviewMessage 
-                    content={pendingMessages[selectedChat.id].content} 
-                  />
-                )}
-                {selectedChat.id && loadingChats[selectedChat.id] && <LoadingMessage />}
-                <div ref={messagesEndRef} />
-              </ErrorBoundary>
-            </div>
-
-            <ChatInput
-              onSendMessage={(content) => {
-                const messageContent = content.trim();
-                if (!selectedChatId || !messageContent) return;
-
-                setPendingMessages(prev => ({
-                  ...prev,
-                  [selectedChatId]: {
-                    content: messageContent,
-                    timestamp: Date.now()
-                  }
-                }));
-
-                setLoadingChats(prev => ({
-                  ...prev,
-                  [selectedChatId]: true
-                }));
-
-                sendMessageAsync(selectedChatId, messageContent);
-              }}
-              disabled={selectedChatId !== null && loadingChats[selectedChatId]}
-              autoFocus
+            <TabBar
+              tabs={sortedOpenChats}
+              activeTabId={activeTabId}
+              onTabSelect={setActiveTabId}
+              onTabClose={handleTabClose}
+              onTabReorder={handleTabReorder}
             />
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-500">
-            Select a chat or create a new one to get started
           </div>
-        )}
+        </header>
+
+        <main className="flex-1 overflow-hidden">
+          <>
+            {console.log('Main render - activeTabId:', activeTabId)}
+            {activeTabId && (
+              <div className="h-full flex flex-col relative">
+                <>
+                  {console.log('Rendering content for tab:', activeTabId)}
+                  <div className="sticky top-0 bg-white z-50">
+                    <div className="relative z-50">
+                      <ChatControlBar
+                        chatId={parseInt(activeTabId, 10)}
+                        onAfterDelete={() => handleTabClose(activeTabId)}
+                        onAfterClear={() => loadChats()}
+                      />
+                    </div>
+                  </div>
+                  {console.log('ChatWindow props:', {
+                    messages: openChats[activeTabId]?.messages || [],
+                    error: openChats[activeTabId]?.error || null,
+                    isLoading: openChats[activeTabId]?.isLoading || false,
+                    previewMessage: openChats[activeTabId]?.previewMessage || null
+                  })}
+                  <ChatWindow
+                    messages={openChats[activeTabId]?.messages || []}
+                    onSendMessage={sendMessageAsync}
+                    error={openChats[activeTabId]?.error || null}
+                    isLoading={openChats[activeTabId]?.isLoading || false}
+                    previewMessage={openChats[activeTabId]?.previewMessage || null}
+                  />
+                </>
+              </div>
+            )}
+          </>
+        </main>
       </div>
 
       {/* Right Sidebar - ToolPanel */}
       <ToolPanel
         tools={tools}
-        selectedChatId={selectedChatId}
+        selectedChatId={activeTabId ? parseInt(activeTabId, 10) : null}
         onCreateTool={handleCreateTool}
-        onAssignTool={handleAssignTool}
+        onAssignTool={(toolId) => activeTabId ? handleAssignTool(parseInt(activeTabId, 10), toolId) : Promise.resolve()}
         onDeleteTool={handleDeleteTool}
         onUpdateTool={handleUpdateTool}
-        onRefreshTools={handleRefreshTools}
+        onRefreshTools={loadTools}
         loading={loadingTools}
         activeTool={activeTool}
       />
+
+      {/* Global Error Display */}
+      {error && <ErrorDisplay error={error} onDismiss={() => setError(null)} />}
     </div>
   );
 }
+
+export default App;

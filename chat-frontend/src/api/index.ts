@@ -1,7 +1,11 @@
 // src/api/index.ts
 
 import axios from 'axios';
-import type { Chat, ChatResponse, Tool, ToolCreate } from '../types';
+import type { Chat } from '../types';
+import type { Tool, ToolCreate } from '../components/ToolPanel';
+
+// Add ChatResponse type locally since it's only used in the API
+type ChatResponse = Chat;
 
 // Type guard for axios errors
 type AxiosErrorLike = {
