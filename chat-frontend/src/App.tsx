@@ -37,18 +37,19 @@ function App() {
   }, []);
 
   // Open a chat in a new tab
-  const openChatTab = useCallback((chat: Chat) => {
+  const openChatTab = useCallback(async (chat: Chat) => {
     console.log('Opening chat tab:', chat);
     const tabId = chat.id.toString();
     
-    // If not already open, add to openChats
-    if (!openChats[tabId]) {
-      console.log('Chat not in openChats, adding:', chat);
+    try {
+      // Get fresh data from API
+      const freshChat = await chatApi.getChat(chat.id);
+      
       setOpenChats(prev => ({
         ...prev,
         [tabId]: {
-          chat,
-          messages: chat.history || [],
+          chat: freshChat,
+          messages: freshChat.history || [],
           error: undefined,
           isLoading: false,
           previewMessage: undefined
@@ -63,13 +64,14 @@ function App() {
         }
         return prev;
       });
-    } else {
-      console.log('Chat already open:', chat);
+      
+      console.log('Setting active tab ID:', tabId);
+      setActiveTabId(tabId);
+    } catch (error) {
+      console.error('Failed to open chat:', error);
+      setError(error instanceof Error ? error.message : 'Failed to open chat');
     }
-    
-    console.log('Setting active tab ID:', tabId);
-    setActiveTabId(tabId);
-  }, [openChats]);
+  }, []);
 
   // Load existing chats
   const loadChats = useCallback(async () => {
@@ -77,26 +79,26 @@ function App() {
       const loadedChats = await chatApi.listChats();
       setChats(loadedChats);
 
-      // For any already open chats, update their data
-      setOpenChats(prev => {
-        const updatedChats = { ...prev };
-        Object.keys(prev).forEach(tabId => {
-          const loadedChat = loadedChats.find(c => c.id.toString() === tabId);
-          if (loadedChat) {
-            updatedChats[tabId] = {
-              ...updatedChats[tabId],
-              chat: loadedChat,
-              messages: loadedChat.history || []
-            };
-          }
-        });
-        return updatedChats;
-      });
+      // For any already open chats, update their data with fresh API data
+      const updatedChats = { ...openChats };
+      for (const tabId of Object.keys(openChats)) {
+        try {
+          const freshChat = await chatApi.getChat(parseInt(tabId, 10));
+          updatedChats[tabId] = {
+            ...updatedChats[tabId],
+            chat: freshChat,
+            messages: freshChat.history || []
+          };
+        } catch (err) {
+          console.error(`Failed to refresh chat ${tabId}:`, err);
+        }
+      }
+      setOpenChats(updatedChats);
     } catch (error) {
       console.error('Failed to load chats:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chats');
     }
-  }, []);
+  }, []); // Remove openChats from dependencies
 
   // Initial load
   useEffect(() => {
@@ -196,7 +198,6 @@ function App() {
 
   const sendMessageAsync = useCallback(async (content: string) => {
     if (!activeTabId) return;
-    
     const chatState = openChats[activeTabId];
     if (!chatState) return;
 
@@ -213,6 +214,7 @@ function App() {
     }));
 
     try {
+      // Send message and get fresh chat data
       const updatedChat = await chatApi.sendMessage(chatId, content);
 
       setOpenChats(prev => ({
@@ -223,6 +225,7 @@ function App() {
           messages: updatedChat.history || [],
           isLoading: false,
           previewMessage: undefined,
+          error: undefined
         }
       }));
     } catch (error) {
