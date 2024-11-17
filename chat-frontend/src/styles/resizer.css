@@ -1,0 +1,24 @@
+/* Styles for the resizer functionality */
+.dragging-resize {
+  cursor: ns-resize !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dragging-resize * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.resizer-active {
+  z-index: 50;
+}
+
+.resizer-active::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.1);
+  z-index: -1;
+  pointer-events: none;
+}

@@ -66,7 +66,9 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
           `}
         >
           <div className="text-sm">
-            {isUser ? message.content : renderAssistantContent(message.content)}
+            {isUser ? (
+              <div className="whitespace-pre-wrap">{message.content}</div>
+            ) : renderAssistantContent(message.content)}
           </div>
         </div>
       </div>

@@ -3,14 +3,16 @@
 import './index.css';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Chat, ChatMessage as ChatMessageType, Tool, ToolCreate, MessageRole } from './types';
+import { Chat, ChatMessage as ChatMessageType, Tool, ToolCreate } from './types';
 import ChatMessage from './components/ChatMessage';
-import UserPreviewMessage from './components/UserPreviewMessage'; // Import the new component
+import UserPreviewMessage from './components/UserPreviewMessage';
 import { chatApi } from './api';
+import { ErrorDisplay } from './components/ErrorDisplay';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoadingMessage } from './components/LoadingMessage';
-import { Send, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { ToolPanel } from './components/ToolPanel';
+import { ChatInput } from './components/ChatInput';
 
 // Add new interface and states at the top of the App component
 interface PendingMessage {
@@ -18,33 +20,12 @@ interface PendingMessage {
   timestamp: number;
 }
 
-const ErrorDisplay: React.FC<{ error: string | null; onDismiss: () => void }> = ({ 
-  error, 
-  onDismiss 
-}) => {
-  if (!error) return null;
-
-  return (
-    <div className="fixed top-4 right-4 p-4 bg-red-100 border border-red-400 rounded-md z-50 flex items-center gap-2">
-      <div className="text-red-700">{error}</div>
-      <button
-        onClick={onDismiss}
-        className="text-white bg-red-600 px-2 py-1 rounded hover:bg-red-700"
-      >
-        Dismiss
-      </button>
-    </div>
-  );
-};
-
 export default function App() {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
-  const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   // Tool-related states
   const [tools, setTools] = useState<Tool[]>([]);
@@ -113,29 +94,6 @@ export default function App() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create chat');
     }
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedChatId || !input.trim()) return;
-
-    const messageContent = input.trim();
-    setInput('');
-
-    setPendingMessages(prev => ({
-      ...prev,
-      [selectedChatId]: {
-        content: messageContent,
-        timestamp: Date.now()
-      }
-    }));
-
-    setLoadingChats(prev => ({
-      ...prev,
-      [selectedChatId]: true
-    }));
-
-    sendMessageAsync(selectedChatId, messageContent);
   };
 
   const sendMessageAsync = async (chatId: number, content: string) => {
@@ -293,10 +251,6 @@ export default function App() {
     scrollToBottom
   ]);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, [selectedChat]);
-
   // Function to order messages based on parent_message_uuid
   const getOrderedMessages = (messages: ChatMessageType[]) => {
     const messageMap: Record<string, ChatMessageType> = {};
@@ -409,6 +363,7 @@ export default function App() {
       <div className="flex-1 flex flex-col">
         {selectedChat ? (
           <>
+
             <div className="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
               <h2 className="text-xl font-semibold">Structured Chat - Conversation {selectedChat.id}</h2>
               <button
@@ -444,27 +399,29 @@ export default function App() {
               </ErrorBoundary>
             </div>
 
-            <form
-              onSubmit={handleSendMessage}
-              className="p-4 border-t border-gray-200 bg-white flex gap-2"
-            >
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                type="submit"
-                disabled={!input.trim() || (selectedChatId !== null && loadingChats[selectedChatId]) || false}
-                className="py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Send message"
-              >
-                <Send className="h-5 w-5" />
-              </button>
-            </form>
+            <ChatInput
+              onSendMessage={(content) => {
+                const messageContent = content.trim();
+                if (!selectedChatId || !messageContent) return;
+
+                setPendingMessages(prev => ({
+                  ...prev,
+                  [selectedChatId]: {
+                    content: messageContent,
+                    timestamp: Date.now()
+                  }
+                }));
+
+                setLoadingChats(prev => ({
+                  ...prev,
+                  [selectedChatId]: true
+                }));
+
+                sendMessageAsync(selectedChatId, messageContent);
+              }}
+              disabled={selectedChatId !== null && loadingChats[selectedChatId]}
+              autoFocus
+            />
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-500">
