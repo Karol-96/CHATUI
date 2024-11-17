@@ -3,44 +3,38 @@
 import './index.css';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Chat, ChatMessage } from './types';
+import type { Chat, ChatMessage, ChatState } from './types';
 import type { Tool, ToolCreate } from './components/ToolPanel';
 import { ChatWindow } from './components/ChatWindow';
 import { TabBar } from './components/TabBar';
 import { chatApi } from './api';
-import { X } from 'lucide-react';
+import { Layout, LayoutGrid } from 'lucide-react';
 import { ToolPanel } from './components/ToolPanel';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { ChatControlBar } from './components/ChatControlBar';
-
-interface ChatState {
-  chat: Chat;
-  messages: ChatMessage[];
-  error: string | null;
-  isLoading: boolean;
-  previewMessage: string | null;
-}
+import { TmuxLayout } from './components/TmuxLayout';
+import ChatList from './components/ChatList';
+import { X } from 'lucide-react';
 
 function App() {
   // All chats that exist
-  const [chats, setAllChats] = useState<Chat[]>([]);
+  const [chats, setChats] = useState<Chat[]>([]);
   // Only the chats that are open in tabs
   const [openChats, setOpenChats] = useState<Record<string, ChatState>>({});
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [tabOrder, setTabOrder] = useState<number[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | undefined>();
   const [tools, setTools] = useState<Tool[]>([]);
-  const [activeTool, setActiveTool] = useState<number | null>(null);
   const [loadingTools, setLoadingTools] = useState(false);
+  const [activeTool, setActiveTool] = useState<number | null>(null);
+  const [isTmuxMode, setIsTmuxMode] = useState(false);
 
   // Generate chat title from first message
-  const generateChatTitle = (chat: Chat): string => {
+  const generateChatTitle = useCallback((chat: Chat): string => {
     const firstUserMessage = chat.history.find(message => message.role === 'user');
-    if (firstUserMessage) {
-      return firstUserMessage.content.split(' ').slice(0, 3).join(' ');
-    }
-    return `Chat ${chat.id}`;
-  };
+    if (!firstUserMessage) return `Chat ${chat.id}`;
+    return firstUserMessage.content.slice(0, 30) + (firstUserMessage.content.length > 30 ? '...' : '');
+  }, []);
 
   // Open a chat in a new tab
   const openChatTab = useCallback((chat: Chat) => {
@@ -55,9 +49,9 @@ function App() {
         [tabId]: {
           chat,
           messages: chat.history || [],
-          error: null,
+          error: undefined,
           isLoading: false,
-          previewMessage: null
+          previewMessage: undefined
         }
       }));
 
@@ -81,7 +75,7 @@ function App() {
   const loadChats = useCallback(async () => {
     try {
       const loadedChats = await chatApi.listChats();
-      setAllChats(loadedChats);
+      setChats(loadedChats);
 
       // For any already open chats, update their data
       setOpenChats(prev => {
@@ -141,7 +135,7 @@ function App() {
   const handleDeleteChat = useCallback(async (chatId: number) => {
     try {
       await chatApi.deleteChat(chatId);
-      setAllChats(prev => prev.filter(chat => chat.id !== chatId));
+      setChats(prev => prev.filter(chat => chat.id !== chatId));
       
       // Close its tab if it's open
       const tabId = chatId.toString();
@@ -173,13 +167,18 @@ function App() {
 
   // Update active tool when chat changes
   useEffect(() => {
-    if (activeTabId) {
-      const chatState = openChats[activeTabId];
-      if (chatState?.chat.active_tool_id) {
-        setActiveTool(chatState.chat.active_tool_id);
-      } else {
-        setActiveTool(null);
-      }
+    if (!activeTabId) {
+      setActiveTool(null);
+      return;
+    }
+    const chatState = openChats[activeTabId];
+    if (chatState?.chat.active_tool_id) {
+      const toolId = typeof chatState.chat.active_tool_id === 'string' 
+        ? parseInt(chatState.chat.active_tool_id, 10)
+        : chatState.chat.active_tool_id;
+      setActiveTool(toolId);
+    } else {
+      setActiveTool(null);
     }
   }, [activeTabId, openChats]);
 
@@ -187,7 +186,7 @@ function App() {
     try {
       const newChat = await chatApi.createChat();
       
-      setAllChats(prev => [...prev, newChat]);
+      setChats(prev => [...prev, newChat]);
       openChatTab(newChat);
     } catch (error) {
       console.error('Failed to create chat:', error);
@@ -209,7 +208,7 @@ function App() {
         ...prev[activeTabId],
         isLoading: true,
         previewMessage: content,
-        error: null,
+        error: undefined,
       }
     }));
 
@@ -223,7 +222,7 @@ function App() {
           chat: updatedChat,
           messages: updatedChat.history || [],
           isLoading: false,
-          previewMessage: null,
+          previewMessage: undefined,
         }
       }));
     } catch (error) {
@@ -234,7 +233,7 @@ function App() {
           ...prev[activeTabId],
           error: error instanceof Error ? error.message : 'Failed to send message',
           isLoading: false,
-          previewMessage: null,
+          previewMessage: undefined,
         }
       }));
     }
@@ -280,7 +279,7 @@ function App() {
     try {
       const updatedChat = await chatApi.assignToolToChat(chatId, toolId);
       
-      setAllChats(prev => prev.map(chat => 
+      setChats(prev => prev.map(chat => 
         chat.id === chatId ? updatedChat : chat
       ));
       
@@ -341,83 +340,57 @@ function App() {
   }, [chats, tabOrder, openChats]);
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Left Sidebar - Chat List */}
-      <div className="w-64 border-r border-gray-200 bg-white flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Chats</h2>
-        </div>
+    <div className="flex h-screen">
+      {/* Left Sidebar - ChatList */}
+      <ChatList
+        chats={chats}
+        onSelectChat={openChatTab}
+        selectedChatId={activeTabId ? parseInt(activeTabId, 10) : null}
+        onCreateChat={createNewChat}
+        onDeleteChat={handleDeleteChat}
+      />
 
-        <div className="flex-1 overflow-y-auto">
-          {chats.map((chat) => {
-            const title = generateChatTitle(chat);
-            const lastMessage = chat.history[chat.history.length - 1];
-            
-            return (
-              <div
-                key={chat.id}
-                className={`p-4 cursor-pointer border-b border-gray-100 ${
-                  activeTabId === chat.id.toString() ? 'bg-blue-50' : 'hover:bg-gray-50'
-                } relative`}
-                onClick={() => openChatTab(chat)}
-              >
-                <div className="pr-8">
-                  <div className="font-medium">{title}</div>
-                  {chat.history.length > 0 && (
-                    <div className="text-sm text-gray-500 truncate">
-                      {lastMessage.role === 'assistant' 
-                        ? 'AI: ' + lastMessage.content
-                        : lastMessage.content}
-                    </div>
-                  )}
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteChat(chat.id);
-                  }}
-                  className="absolute top-2 right-2 p-1 text-gray-500 hover:text-red-500"
-                  title="Delete chat"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="p-4 border-t border-gray-200">
-          <button
-            onClick={createNewChat}
-            className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition duration-200"
-          >
-            New Chat
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content Area */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <header className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-between items-center px-4 py-4">
-              <h1 className="text-lg font-semibold text-gray-900">Parallel Chat UI</h1>
-            </div>
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200 px-4 py-2">
+          <div className="flex justify-between items-center">
             <TabBar
-              tabs={sortedOpenChats}
+              tabs={tabOrder.map(id => ({
+                id: id.toString(),
+                title: openChats[id.toString()]?.chat ? generateChatTitle(openChats[id.toString()].chat) : `Chat ${id}`
+              }))}
               activeTabId={activeTabId}
               onTabSelect={setActiveTabId}
               onTabClose={handleTabClose}
               onTabReorder={handleTabReorder}
             />
+            <button
+              onClick={() => setIsTmuxMode(!isTmuxMode)}
+              className="ml-2 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title={isTmuxMode ? "Switch to single view" : "Switch to grid view"}
+            >
+              {isTmuxMode ? <Layout size={20} /> : <LayoutGrid size={20} />}
+            </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-hidden">
-          <>
-            {console.log('Main render - activeTabId:', activeTabId)}
-            {activeTabId && (
-              <div className="h-full flex flex-col relative">
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-hidden bg-gray-50">
+          {activeTabId && (
+            isTmuxMode ? (
+              <TmuxLayout
+                openChats={openChats}
+                tabOrder={tabOrder}
+                activeTabId={activeTabId}
+                onSendMessage={sendMessageAsync}
+                onTabSelect={setActiveTabId}
+                onTabClose={handleTabClose}
+                onAfterDelete={handleTabClose}
+                onAfterClear={loadChats}
+              />
+            ) : (
+              <div className="h-full flex flex-col relative bg-white">
                 <>
                   {console.log('Rendering content for tab:', activeTabId)}
                   <div className="sticky top-0 bg-white z-50">
@@ -425,27 +398,28 @@ function App() {
                       <ChatControlBar
                         chatId={parseInt(activeTabId, 10)}
                         onAfterDelete={() => handleTabClose(activeTabId)}
-                        onAfterClear={() => loadChats()}
+                        onAfterClear={loadChats}
                       />
                     </div>
                   </div>
                   {console.log('ChatWindow props:', {
                     messages: openChats[activeTabId]?.messages || [],
-                    error: openChats[activeTabId]?.error || null,
+                    error: openChats[activeTabId]?.error,
                     isLoading: openChats[activeTabId]?.isLoading || false,
-                    previewMessage: openChats[activeTabId]?.previewMessage || null
+                    previewMessage: openChats[activeTabId]?.previewMessage
                   })}
                   <ChatWindow
                     messages={openChats[activeTabId]?.messages || []}
                     onSendMessage={sendMessageAsync}
-                    error={openChats[activeTabId]?.error || null}
+                    error={openChats[activeTabId]?.error}
                     isLoading={openChats[activeTabId]?.isLoading || false}
-                    previewMessage={openChats[activeTabId]?.previewMessage || null}
+                    previewMessage={openChats[activeTabId]?.previewMessage}
+                    isActive={true}
                   />
                 </>
               </div>
-            )}
-          </>
+            )
+          )}
         </main>
       </div>
 
@@ -463,7 +437,7 @@ function App() {
       />
 
       {/* Global Error Display */}
-      {error && <ErrorDisplay error={error} onDismiss={() => setError(null)} />}
+      {error && <ErrorDisplay error={error} onDismiss={() => setError(undefined)} />}
     </div>
   );
 }

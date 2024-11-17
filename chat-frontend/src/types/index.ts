@@ -7,17 +7,28 @@ export interface Chat {
   toolId?: string;
   createdAt: string;
   history: ChatMessage[];
-  active_tool_id?: number | null;
+  active_tool_id?: number | string;
 }
 
 export interface ChatMessage {
-  id: string;
-  chatId: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  createdAt: string;
-  uuid?: string;  // Added back for ChatWindow compatibility
+  uuid?: string;
+  parent_message_uuid?: string | null;
+  tool_name?: string;
+  id?: string;
+  chatId?: string;
+  createdAt?: string;
   data?: any;
+}
+
+// Chat state interface for managing chat UI state
+export interface ChatState {
+  chat: Chat;
+  messages: ChatMessage[];
+  error?: string;
+  isLoading: boolean;
+  previewMessage?: string;
 }
 
 // API Error types used across components
