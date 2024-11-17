@@ -9,9 +9,6 @@ interface ChatWindowProps {
   isLoading?: boolean;
   previewMessage?: string;
   isActive?: boolean;
-  onInputFocus?: () => void;
-  onInputBlur?: () => void;
-  onActivate?: () => void;
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -21,9 +18,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   isLoading = false,
   previewMessage,
   isActive = false,
-  onInputFocus,
-  onInputBlur,
-  onActivate,
 }) => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,17 +52,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isLoading, onSendMessage]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        inputRef.current?.blur();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputRef.current?.value.trim() || isLoading) return;
@@ -78,16 +61,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     await onSendMessage(message);
   };
 
-  const handleInputFocus = (e: React.FocusEvent) => {
-    if (!isActive && onActivate) {
-      onActivate();
-    }
-    onInputFocus?.();
-  };
-
   return (
     <div ref={containerRef} className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto p-4" onClick={() => !isActive && onActivate?.()}>
+      <div className="flex-1 overflow-y-auto p-4">
         {messages.map((message, index) => (
           <ChatMessage key={message.uuid || index} message={message} />
         ))}
@@ -107,12 +83,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
       <form onSubmit={handleSubmit} className="p-4 border-t">
         <textarea
           ref={inputRef}
-          className="w-full p-2 border rounded resize-none"
+          className={`w-full p-2 border rounded resize-none ${!isActive ? 'bg-gray-50' : ''}`}
           rows={3}
           placeholder="Type your message..."
-          onFocus={handleInputFocus}
-          onBlur={onInputBlur}
-          disabled={!isActive}
+          readOnly={!isActive}
         />
         <button
           type="submit"

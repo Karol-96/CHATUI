@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { ChatWindow } from './ChatWindow';
 import { ChatControlBar } from './ChatControlBar';
 import { ChatState } from '../types';
@@ -24,8 +24,6 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
   onAfterDelete,
   onAfterClear,
 }) => {
-  const [inputFocused, setInputFocused] = useState(false);
-
   // Handle tab key navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -90,9 +88,6 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
                   isLoading={chatState.isLoading}
                   previewMessage={chatState.previewMessage}
                   isActive={isActive}
-                  onInputFocus={() => setInputFocused(true)}
-                  onInputBlur={() => setInputFocused(false)}
-                  onActivate={() => !isActive && onTabSelect(tabId)}
                 />
               </div>
             </div>
