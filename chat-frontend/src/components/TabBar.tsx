@@ -1,5 +1,6 @@
 import React from 'react';
 import { X } from 'lucide-react';
+import { tokens } from '../styles/tokens';
 
 interface Tab {
   id: string;
@@ -44,7 +45,10 @@ export const TabBar: React.FC<TabBarProps> = ({
   };
 
   return (
-    <div className="flex space-x-1 overflow-x-auto flex-1 h-14 px-4 items-center scrollbar-none">
+    <div 
+      className="flex gap-1 overflow-x-auto flex-1 px-4 items-center scrollbar-none"
+      style={{ height: tokens.spacing.header }}
+    >
       {tabs.map((tab, index) => (
         <div
           key={tab.id}
@@ -54,14 +58,15 @@ export const TabBar: React.FC<TabBarProps> = ({
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, index)}
           className={`
-            group flex items-center px-4 h-10
+            group flex items-center px-4
             text-sm font-medium rounded-lg cursor-pointer select-none
-            min-w-[120px] max-w-[200px] border
+            min-w-[120px] max-w-[200px] border transition-colors my-2
             ${activeTabId === tab.id
-              ? 'bg-white text-gray-900 border-gray-300 shadow-sm'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-200'
-            } transition-colors
+              ? 'bg-white border-gray-300 shadow-sm'
+              : 'text-gray-600 hover:bg-gray-100 border-gray-200'
+            }
           `}
+          style={{ height: 'calc(100% - 16px)' }}
           onClick={() => onTabSelect(tab.id)}
         >
           <span className="truncate flex-1">{tab.title}</span>
@@ -70,7 +75,8 @@ export const TabBar: React.FC<TabBarProps> = ({
               e.stopPropagation();
               onTabClose(tab.id);
             }}
-            className="ml-2 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity p-0.5 rounded-sm hover:bg-gray-100"
+            className="ml-2 opacity-0 group-hover:opacity-100 hover:text-red-500 
+                       transition-opacity p-0.5 rounded-sm hover:bg-gray-100"
           >
             <X size={14} />
           </button>

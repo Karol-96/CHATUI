@@ -1,6 +1,7 @@
 // src/App.tsx
 
 import './index.css';
+import { tokens } from './styles/tokens';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Chat, ChatMessage, ChatState } from './types';
@@ -356,8 +357,11 @@ function App() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200">
-          <div className="flex items-center h-14">
+        <header className="bg-white">
+          <div 
+            className="flex items-center border-b border-gray-200" 
+            style={{ height: tokens.spacing.header }}
+          >
             <TabBar
               tabs={tabOrder.map(id => ({
                 id: id.toString(),
@@ -370,7 +374,7 @@ function App() {
             />
             <button
               onClick={() => setIsTmuxMode(!isTmuxMode)}
-              className="h-14 px-4 border-l border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors flex items-center"
+              className="px-4 border-l border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors flex items-center h-full"
               title={isTmuxMode ? "Switch to single view" : "Switch to grid view"}
             >
               {isTmuxMode ? <Layout size={20} /> : <LayoutGrid size={20} />}

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Chat } from '../types';
 import { Plus, X } from 'lucide-react';
+import { tokens } from '../styles/tokens';
 
 interface ChatListProps {
   chats: Chat[];
@@ -27,7 +28,10 @@ const ChatList: React.FC<ChatListProps> = ({
 
   return (
     <div className="w-64 bg-white h-full flex flex-col border-r border-gray-200">
-      <div className="min-h-[57px] px-4 border-b border-gray-200 flex items-center">
+      <div 
+        className="px-4 border-b border-gray-200 flex items-center"
+        style={{ height: tokens.spacing.header }}
+      >
         <h2 className="text-lg font-semibold">Chats</h2>
       </div>
       

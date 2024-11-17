@@ -1,6 +1,7 @@
 // src/components/ToolPanel.tsx
 import React, { useState, useCallback } from 'react';
 import { Plus, Settings, Trash2, Eye, EyeOff, Edit2, RefreshCw, CheckCircle } from 'lucide-react';
+import { tokens } from '../styles/tokens';
 
 // Tool-specific interfaces
 export interface Tool {
@@ -248,7 +249,10 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
 
   return (
     <div className="w-64 border-l border-gray-200 bg-white flex flex-col">
-      <div className="min-h-[57px] px-4 border-b border-gray-200 flex items-center justify-between">
+      <div 
+        className="px-4 border-b border-gray-200 flex items-center justify-between"
+        style={{ height: tokens.spacing.header }}
+      >
         <h2 className="text-lg font-semibold">Tools</h2>
         <button
           onClick={onRefreshTools}
