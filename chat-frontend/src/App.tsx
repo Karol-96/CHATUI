@@ -356,8 +356,8 @@ function App() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-4 py-2">
-          <div className="flex justify-between items-center">
+        <header className="bg-white border-b border-gray-200">
+          <div className="flex items-center h-14">
             <TabBar
               tabs={tabOrder.map(id => ({
                 id: id.toString(),
@@ -370,7 +370,7 @@ function App() {
             />
             <button
               onClick={() => setIsTmuxMode(!isTmuxMode)}
-              className="ml-2 p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              className="h-14 px-4 border-l border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors flex items-center"
               title={isTmuxMode ? "Switch to single view" : "Switch to grid view"}
             >
               {isTmuxMode ? <Layout size={20} /> : <LayoutGrid size={20} />}

@@ -44,7 +44,7 @@ export const TabBar: React.FC<TabBarProps> = ({
   };
 
   return (
-    <div className="flex space-x-0.5 overflow-x-auto flex-1 px-1 py-1">
+    <div className="flex space-x-1 overflow-x-auto flex-1 h-14 px-4 items-center scrollbar-none">
       {tabs.map((tab, index) => (
         <div
           key={tab.id}
@@ -53,11 +53,15 @@ export const TabBar: React.FC<TabBarProps> = ({
           onDragEnd={handleDragEnd}
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, index)}
-          className={`group flex items-center px-4 py-1.5 text-sm font-medium rounded-t-lg cursor-pointer select-none
+          className={`
+            group flex items-center px-4 h-10
+            text-sm font-medium rounded-lg cursor-pointer select-none
+            min-w-[120px] max-w-[200px] border
             ${activeTabId === tab.id
-              ? 'bg-white text-gray-900 shadow-[0_-2px_4px_rgba(0,0,0,0.05)] border border-gray-200 border-b-0'
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-            } transition-colors min-w-[120px] max-w-[200px]`}
+              ? 'bg-white text-gray-900 border-gray-300 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 border-gray-200'
+            } transition-colors
+          `}
           onClick={() => onTabSelect(tab.id)}
         >
           <span className="truncate flex-1">{tab.title}</span>

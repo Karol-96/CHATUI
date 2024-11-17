@@ -26,9 +26,9 @@ const ChatList: React.FC<ChatListProps> = ({
   };
 
   return (
-    <div className="w-64 bg-gray-50 h-full flex flex-col">
-      <div className="p-4 border-b border-gray-200">
-        <h2 className="text-xl font-semibold">Chats</h2>
+    <div className="w-64 bg-white h-full flex flex-col border-r border-gray-200">
+      <div className="min-h-[57px] px-4 border-b border-gray-200 flex items-center">
+        <h2 className="text-lg font-semibold">Chats</h2>
       </div>
       
       <div className="flex-1 overflow-y-auto p-2">
