@@ -1,7 +1,7 @@
 // src/api/index.ts
 
 import axios from 'axios';
-import type { Chat } from '../types';
+import type { Chat, SystemPrompt, SystemPromptCreate } from '../types';
 import type { Tool, ToolCreate } from '../components/ToolPanel';
 
 // Add ChatResponse type locally since it's only used in the API
@@ -193,5 +193,41 @@ export const chatApi = {
     } catch (error) {
       throw handleApiError(error);
     }
-  }
+  },
+
+  // System prompt methods
+  listSystemPrompts: async (): Promise<SystemPrompt[]> => {
+    try {
+      const { data } = await api.get<SystemPrompt[]>('/system-prompts/');
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  createSystemPrompt: async (prompt: SystemPromptCreate): Promise<SystemPrompt> => {
+    try {
+      const { data } = await api.post<SystemPrompt>('/system-prompts/', prompt);
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  assignSystemPromptToChat: async (chatId: number, promptId: number): Promise<Chat> => {
+    try {
+      const { data } = await api.put<Chat>(`/${chatId}/system-prompt/by-id/${promptId}`);
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  deleteSystemPrompt: async (promptId: number): Promise<void> => {
+    try {
+      await api.delete(`/system-prompts/${promptId}`);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
 };

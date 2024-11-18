@@ -248,9 +248,10 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
   };
 
   return (
-    <div className="w-64 border-l border-gray-200 bg-white flex flex-col">
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Header */}
       <div 
-        className="px-4 border-b border-gray-200 flex items-center justify-between"
+        className="px-4 border-b border-gray-200 flex items-center justify-between shrink-0"
         style={{ height: tokens.spacing.header }}
       >
         <h2 className="text-lg font-semibold">Tools</h2>
@@ -263,90 +264,95 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {tools.map(renderToolItem)}
-      </div>
+      {/* Main Content Area - Scrollable */}
+      <div className="flex flex-col min-h-0 flex-1">
+        {/* Tools List - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          {tools.map(renderToolItem)}
+        </div>
 
-      <div className="p-4 border-t border-gray-200">
-        {showCreateForm ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <textarea
-                placeholder="Schema Name"
-                value={newTool.schema_name}
-                onChange={(e) => setNewTool({ ...newTool, schema_name: e.target.value })}
-                className={`w-full p-2 border rounded ${
-                  errors.schema_name ? 'border-red-500' : ''
-                }`}
-              />
-              {errors.schema_name && (
-                <p className="text-red-500 text-xs mt-1">{errors.schema_name}</p>
-              )}
-            </div>
-            <div>
-              <textarea
-                placeholder="Schema Description"
-                value={newTool.schema_description}
-                onChange={(e) => setNewTool({ ...newTool, schema_description: e.target.value })}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div>
-              <textarea
-                placeholder="Instruction String"
-                value={newTool.instruction_string}
-                onChange={(e) => setNewTool({ ...newTool, instruction_string: e.target.value })}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-            <div>
-              <textarea
-                placeholder="JSON Schema"
-                value={jsonSchemaInput}
-                onChange={handleJsonSchemaChange}
-                className={`w-full p-2 border rounded font-mono text-sm ${
-                  errors.json_schema ? 'border-red-500' : ''
-                }`}
-              />
-              {errors.json_schema && (
-                <p className="text-red-500 text-xs mt-1">{errors.json_schema}</p>
-              )}
-            </div>
-            <div>
-              <input
-                type="checkbox"
-                checked={newTool.strict_schema}
-                onChange={(e) => setNewTool({ ...newTool, strict_schema: e.target.checked })}
-                className="mr-2"
-              />
-              <label>Strict Schema</label>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200"
-              >
-                {editingTool ? 'Update' : 'Create'}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancel}
-                className="py-2 px-4 border border-gray-300 rounded hover:bg-gray-50 transition-colors duration-200"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        ) : (
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="w-full py-2 px-4 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center justify-center gap-2 transition-colors duration-200"
-          >
-            <Plus className="w-4 h-4" />
-            New Tool
-          </button>
-        )}
+        {/* Create New Tool Section - Fixed at Bottom */}
+        <div className="p-4 border-t border-gray-200 bg-white shrink-0">
+          {showCreateForm ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <textarea
+                  placeholder="Schema Name"
+                  value={newTool.schema_name}
+                  onChange={(e) => setNewTool({ ...newTool, schema_name: e.target.value })}
+                  className={`w-full p-2 border rounded ${
+                    errors.schema_name ? 'border-red-500' : ''
+                  }`}
+                />
+                {errors.schema_name && (
+                  <p className="text-red-500 text-xs mt-1">{errors.schema_name}</p>
+                )}
+              </div>
+              <div>
+                <textarea
+                  placeholder="Schema Description"
+                  value={newTool.schema_description}
+                  onChange={(e) => setNewTool({ ...newTool, schema_description: e.target.value })}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div>
+                <textarea
+                  placeholder="Instruction String"
+                  value={newTool.instruction_string}
+                  onChange={(e) => setNewTool({ ...newTool, instruction_string: e.target.value })}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div>
+                <textarea
+                  placeholder="JSON Schema"
+                  value={jsonSchemaInput}
+                  onChange={handleJsonSchemaChange}
+                  className={`w-full p-2 border rounded font-mono text-sm ${
+                    errors.json_schema ? 'border-red-500' : ''
+                  }`}
+                />
+                {errors.json_schema && (
+                  <p className="text-red-500 text-xs mt-1">{errors.json_schema}</p>
+                )}
+              </div>
+              <div>
+                <input
+                  type="checkbox"
+                  checked={newTool.strict_schema}
+                  onChange={(e) => setNewTool({ ...newTool, strict_schema: e.target.checked })}
+                  className="mr-2"
+                />
+                <label>Strict Schema</label>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {editingTool ? 'Update' : 'Create'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="py-2 px-4 border border-gray-300 rounded hover:bg-gray-50 transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="w-full py-2 px-4 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center justify-center gap-2 transition-colors duration-200"
+            >
+              <Plus className="w-4 h-4" />
+              New Tool
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,9 @@ export interface Chat {
   createdAt: string;
   history: ChatMessage[];
   active_tool_id?: number | string;
+  system_prompt_id?: number | string;  // Added to match backend
+  system_prompt?: { id: number };  // Keep for backward compatibility
+  tool?: { id: number };
 }
 
 export interface ChatMessage {
@@ -44,4 +47,17 @@ export interface ApiError extends Error {
   };
   request?: unknown;
   code?: string;
+}
+
+// System prompt interfaces
+export interface SystemPrompt {
+  id?: number;
+  uuid?: string;
+  name: string;
+  content: string;
+}
+
+export interface SystemPromptCreate {
+  name: string;
+  content: string;
 }

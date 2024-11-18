@@ -6,16 +6,19 @@ import { tokens } from './styles/tokens';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Chat, ChatMessage, ChatState } from './types';
 import type { Tool, ToolCreate } from './components/ToolPanel';
+import type { SystemPrompt } from './types';
 import { ChatWindow } from './components/ChatWindow';
 import { TabBar } from './components/TabBar';
 import { chatApi } from './api';
 import { Layout, LayoutGrid } from 'lucide-react';
-import { ToolPanel } from './components/ToolPanel';
+import { RightPanel } from './components/RightPanel';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { ChatControlBar } from './components/ChatControlBar';
 import { TmuxLayout } from './components/TmuxLayout';
 import ChatList from './components/ChatList';
 import { X } from 'lucide-react';
+import { Settings } from 'lucide-react';
+import { ToolPanel } from './components/ToolPanel';
 
 function App() {
   // All chats that exist
@@ -29,6 +32,9 @@ function App() {
   const [loadingTools, setLoadingTools] = useState(false);
   const [activeTool, setActiveTool] = useState<number | null>(null);
   const [isTmuxMode, setIsTmuxMode] = useState(false);
+  const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
+  const [loadingSystemPrompts, setLoadingSystemPrompts] = useState(false);
+  const [activeSystemPrompt, setActiveSystemPrompt] = useState<number | null>(null);
 
   // Generate chat title from first message
   const generateChatTitle = useCallback((chat: Chat): string => {
@@ -163,39 +169,140 @@ function App() {
     }
   }, []);
 
+  // Load tools on mount
+  useEffect(() => {
+    loadTools();
+  }, []);
+
   // Initial load
   useEffect(() => {
     loadTools();
   }, [loadTools]);
 
-  // Update active tool when chat changes
-  useEffect(() => {
-    if (!activeTabId) {
-      setActiveTool(null);
-      return;
-    }
-    const chatState = openChats[activeTabId];
-    if (chatState?.chat.active_tool_id) {
-      const toolId = typeof chatState.chat.active_tool_id === 'string' 
-        ? parseInt(chatState.chat.active_tool_id, 10)
-        : chatState.chat.active_tool_id;
+  const handleAssignTool = useCallback(async (chatId: number, toolId: number) => {
+    try {
+      const updatedChat = await chatApi.assignToolToChat(chatId, toolId);
+      
+      setChats(prev => prev.map(chat => 
+        chat.id === chatId ? updatedChat : chat
+      ));
+      
+      // Update the open chat if it exists
+      const tabId = chatId.toString();
+      if (openChats[tabId]) {
+        setOpenChats(prev => ({
+          ...prev,
+          [tabId]: {
+            ...prev[tabId],
+            chat: updatedChat,
+            messages: updatedChat.history || [],
+          }
+        }));
+      }
+      
       setActiveTool(toolId);
-    } else {
-      setActiveTool(null);
+    } catch (error) {
+      console.error('Failed to assign tool:', error);
+      setError(error instanceof Error ? error.message : 'Failed to assign tool');
+    }
+  }, [openChats]);
+
+  const loadSystemPrompts = useCallback(async () => {
+    try {
+      setLoadingSystemPrompts(true);
+      const loadedPrompts = await chatApi.listSystemPrompts();
+      // Sort prompts by ID to maintain consistent order, just like tools
+      const sortedPrompts = [...loadedPrompts].sort((a, b) => {
+        if (a.id === undefined || b.id === undefined) return 0;
+        return a.id - b.id;
+      });
+      setSystemPrompts(sortedPrompts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load system prompts');
+    } finally {
+      setLoadingSystemPrompts(false);
+    }
+  }, []);
+
+  // Load system prompts on mount
+  useEffect(() => {
+    loadSystemPrompts();
+  }, [loadSystemPrompts]);
+
+  const handleAssignSystemPrompt = useCallback(async (promptId: number) => {
+    if (!activeTabId) return;
+    const chatId = parseInt(activeTabId, 10);
+    
+    try {
+      setError('');
+      const updatedChat = await chatApi.assignSystemPromptToChat(chatId, promptId);
+      
+      // Update global chat list
+      setChats(prev => prev.map(chat => 
+        chat.id === chatId ? updatedChat : chat
+      ));
+      
+      // Update open chat if it exists
+      const tabId = chatId.toString();
+      if (openChats[tabId]) {
+        setOpenChats(prev => ({
+          ...prev,
+          [tabId]: {
+            ...prev[tabId],
+            chat: updatedChat,
+            messages: updatedChat.history || []
+          }
+        }));
+      }
+      
+      // Update active system prompt immediately
+      setActiveSystemPrompt(promptId);
+    } catch (error) {
+      console.error('Failed to assign system prompt:', error);
+      const message = error instanceof Error ? error.message : 'Failed to assign system prompt';
+      setError(message);
+      // Reset active system prompt on error
+      if (openChats[activeTabId]) {
+        const currentPromptId = openChats[activeTabId].chat.system_prompt_id;
+        setActiveSystemPrompt(currentPromptId ? 
+          typeof currentPromptId === 'string' ? parseInt(currentPromptId, 10) : currentPromptId 
+          : null
+        );
+      }
     }
   }, [activeTabId, openChats]);
+
+  const handleDeleteSystemPrompt = useCallback(async (promptId: number) => {
+    try {
+      await chatApi.deleteSystemPrompt(promptId);
+      await loadSystemPrompts();
+    } catch (error) {
+      console.error('Failed to delete system prompt:', error);
+    }
+  }, [loadSystemPrompts]);
 
   const createNewChat = useCallback(async () => {
     try {
       const newChat = await chatApi.createChat();
       
       setChats(prev => [...prev, newChat]);
-      openChatTab(newChat);
+      await openChatTab(newChat);
+
+      // If there's a system prompt assigned to the chat, update the state
+      if (newChat.system_prompt_id) {
+        const promptId = typeof newChat.system_prompt_id === 'string'
+          ? parseInt(newChat.system_prompt_id, 10)
+          : newChat.system_prompt_id;
+        setActiveSystemPrompt(promptId);
+      } else if (newChat.system_prompt?.id) {
+        // Backward compatibility
+        setActiveSystemPrompt(newChat.system_prompt.id);
+      }
     } catch (error) {
       console.error('Failed to create chat:', error);
       setError(error instanceof Error ? error.message : 'Failed to create chat');
     }
-  }, []);
+  }, [openChatTab]);
 
   const sendMessageAsync = useCallback(async (content: string) => {
     if (!activeTabId) return;
@@ -279,34 +386,6 @@ function App() {
     }
   };
 
-  const handleAssignTool = useCallback(async (chatId: number, toolId: number) => {
-    try {
-      const updatedChat = await chatApi.assignToolToChat(chatId, toolId);
-      
-      setChats(prev => prev.map(chat => 
-        chat.id === chatId ? updatedChat : chat
-      ));
-      
-      // Update the open chat if it exists
-      const tabId = chatId.toString();
-      if (openChats[tabId]) {
-        setOpenChats(prev => ({
-          ...prev,
-          [tabId]: {
-            ...prev[tabId],
-            chat: updatedChat,
-            messages: updatedChat.history || [],
-          }
-        }));
-      }
-      
-      setActiveTool(toolId);
-    } catch (error) {
-      console.error('Failed to assign tool:', error);
-      setError(error instanceof Error ? error.message : 'Failed to assign tool');
-    }
-  }, [openChats]);
-
   const handleClearHistory = async (chatId: number) => {
     try {
       const updatedChat = await chatApi.clearHistory(chatId);
@@ -342,6 +421,45 @@ function App() {
       .map(id => chatMap.get(id))
       .filter((chat): chat is Chat => chat !== undefined && chat.id.toString() in openChats);
   }, [chats, tabOrder, openChats]);
+
+  const activeChat = useMemo(() => {
+    if (!activeTabId) return null;
+    return openChats[activeTabId]?.chat;
+  }, [activeTabId, openChats]);
+
+  // Update active tool and system prompt when chat changes
+  useEffect(() => {
+    if (!activeTabId) {
+      setActiveTool(null);
+      setActiveSystemPrompt(null);
+      return;
+    }
+    const chatState = openChats[activeTabId];
+    if (!chatState) return;
+
+    // Update active tool
+    if (chatState.chat.active_tool_id) {
+      const toolId = typeof chatState.chat.active_tool_id === 'string' 
+        ? parseInt(chatState.chat.active_tool_id, 10)
+        : chatState.chat.active_tool_id;
+      setActiveTool(toolId);
+    } else {
+      setActiveTool(null);
+    }
+
+    // Update active system prompt
+    if (chatState.chat.system_prompt_id) {
+      const promptId = typeof chatState.chat.system_prompt_id === 'string'
+        ? parseInt(chatState.chat.system_prompt_id, 10)
+        : chatState.chat.system_prompt_id;
+      setActiveSystemPrompt(promptId);
+    } else if (chatState.chat.system_prompt?.id) {
+      // Backward compatibility
+      setActiveSystemPrompt(chatState.chat.system_prompt.id);
+    } else {
+      setActiveSystemPrompt(null);
+    }
+  }, [activeTabId, openChats]);
 
   return (
     <div className="flex h-screen">
@@ -430,17 +548,22 @@ function App() {
         </main>
       </div>
 
-      {/* Right Sidebar - ToolPanel */}
-      <ToolPanel
+      {/* Right Sidebar */}
+      <RightPanel
+        activeChatId={activeChat?.id ?? null}
         tools={tools}
-        selectedChatId={activeTabId ? parseInt(activeTabId, 10) : null}
+        systemPrompts={systemPrompts}
         onCreateTool={handleCreateTool}
         onAssignTool={(toolId) => activeTabId ? handleAssignTool(parseInt(activeTabId, 10), toolId) : Promise.resolve()}
         onDeleteTool={handleDeleteTool}
         onUpdateTool={handleUpdateTool}
         onRefreshTools={loadTools}
-        loading={loadingTools}
+        onAssignSystemPrompt={handleAssignSystemPrompt}
+        onDeleteSystemPrompt={handleDeleteSystemPrompt}
+        onRefreshSystemPrompts={loadSystemPrompts}
+        loading={loadingTools || loadingSystemPrompts}
         activeTool={activeTool}
+        activeSystemPrompt={activeSystemPrompt}
       />
 
       {/* Global Error Display */}
