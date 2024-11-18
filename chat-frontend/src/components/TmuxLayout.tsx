@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import { ChatWindow } from './ChatWindow';
 import { ChatControlBar } from './ChatControlBar';
 import { ChatState } from '../types';
+import { Tool } from './ToolPanel';
+import { SystemPrompt } from '../types';
 
 interface TmuxLayoutProps {
   openChats: Record<string, ChatState>;
@@ -12,6 +14,10 @@ interface TmuxLayoutProps {
   onTabClose: (tabId: string) => void;
   onAfterDelete: (tabId: string) => void;
   onAfterClear: () => void;
+  tools: Tool[];
+  systemPrompts: SystemPrompt[];
+  activeTool: number | null;
+  activeSystemPrompt: number | null;
 }
 
 export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
@@ -23,6 +29,10 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
   onTabClose,
   onAfterDelete,
   onAfterClear,
+  tools,
+  systemPrompts,
+  activeTool,
+  activeSystemPrompt,
 }) => {
   // Handle tab key navigation
   useEffect(() => {
@@ -73,11 +83,14 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
             >
               <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
                 <ChatControlBar
-                  chatId={chatId}
+                  chatId={parseInt(chatId.toString(), 10)}
                   onAfterDelete={() => onAfterDelete(tabId)}
                   onAfterClear={onAfterClear}
                   onClose={() => onTabClose(tabId)}
                   title={chatState.chat.title || `Chat ${chatId}`}
+                  systemPromptName={chatState.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === chatState.chat.system_prompt_id)?.name : undefined}
+                  toolName={chatState.chat.active_tool_id ? tools.find(t => t.id === chatState.chat.active_tool_id)?.schema_name : undefined}
+                  isTmux={true}
                 />
               </div>
               <div className="flex-1 min-h-0">

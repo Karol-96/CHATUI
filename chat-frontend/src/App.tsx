@@ -513,6 +513,10 @@ function App() {
                 onTabClose={handleTabClose}
                 onAfterDelete={handleTabClose}
                 onAfterClear={loadChats}
+                tools={tools}
+                systemPrompts={systemPrompts}
+                activeTool={activeTool}
+                activeSystemPrompt={activeSystemPrompt}
               />
             ) : (
               <div className="h-full flex flex-col relative bg-white">
@@ -524,6 +528,9 @@ function App() {
                         chatId={parseInt(activeTabId, 10)}
                         onAfterDelete={() => handleTabClose(activeTabId)}
                         onAfterClear={loadChats}
+                        onClose={() => handleTabClose(activeTabId)}
+                        systemPromptName={openChats[activeTabId]?.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === openChats[activeTabId]?.chat.system_prompt_id)?.name : undefined}
+                        toolName={openChats[activeTabId]?.chat.active_tool_id ? tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id)?.schema_name : undefined}
                       />
                     </div>
                   </div>
