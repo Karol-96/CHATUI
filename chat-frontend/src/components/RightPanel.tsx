@@ -75,11 +75,11 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           <ToolPanel
             tools={tools}
             selectedChatId={activeChatId}
-            onCreateTool={onCreateTool}
             onAssignTool={onAssignTool}
-            onDeleteTool={onDeleteTool}
-            onUpdateTool={onUpdateTool}
             onRefreshTools={onRefreshTools}
+            onDeleteTool={onDeleteTool}
+            onCreateTool={onCreateTool}
+            onUpdateTool={onUpdateTool}
             loading={loading}
             activeTool={activeTool}
           />

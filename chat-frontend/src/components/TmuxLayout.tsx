@@ -61,6 +61,15 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
     return 'grid-cols-3 grid-rows-3';
   };
 
+  // Helper function to get tool name
+  const getToolName = (tool: Tool | undefined): string | undefined => {
+    if (!tool) return undefined;
+    if (tool.is_callable) {
+      return tool.name;
+    }
+    return tool.schema_name;
+  };
+
   return (
     <div className="h-full overflow-hidden">
       <div className={`grid gap-2 p-2 h-full auto-rows-fr ${getGridLayout()}`}>
@@ -89,7 +98,9 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
                   onClose={() => onTabClose(tabId)}
                   title={chatState.chat.title || `Chat ${chatId}`}
                   systemPromptName={chatState.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === chatState.chat.system_prompt_id)?.name : undefined}
-                  toolName={chatState.chat.active_tool_id ? tools.find(t => t.id === chatState.chat.active_tool_id)?.schema_name : undefined}
+                  toolName={chatState.chat.active_tool_id ? 
+                    getToolName(tools.find(t => t.id === chatState.chat.active_tool_id))
+                    : undefined}
                   isTmux={true}
                 />
               </div>

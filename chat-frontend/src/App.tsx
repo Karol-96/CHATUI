@@ -179,33 +179,46 @@ function App() {
     loadTools();
   }, [loadTools]);
 
-  const handleAssignTool = useCallback(async (chatId: number, toolId: number) => {
+  const handleAssignTool = useCallback(async (toolId: number) => {
+    if (!activeTabId) return;
+    const chatId = openChats[activeTabId].chat.id;
+    
     try {
-      const updatedChat = await chatApi.assignToolToChat(chatId, toolId);
+      const tool = tools.find(t => t.id === toolId);
+      if (!tool) throw new Error('Tool not found');
+      
+      const updatedChat = await chatApi.assignToolToChat(chatId, toolId, tool.is_callable);
       
       setChats(prev => prev.map(chat => 
         chat.id === chatId ? updatedChat : chat
       ));
       
-      // Update the open chat if it exists
-      const tabId = chatId.toString();
-      if (openChats[tabId]) {
-        setOpenChats(prev => ({
-          ...prev,
-          [tabId]: {
-            ...prev[tabId],
-            chat: updatedChat,
-            messages: updatedChat.history || [],
-          }
-        }));
-      }
-      
-      setActiveTool(toolId);
-    } catch (error) {
-      console.error('Failed to assign tool:', error);
-      setError(error instanceof Error ? error.message : 'Failed to assign tool');
+      setOpenChats(prev => ({
+        ...prev,
+        [activeTabId]: {
+          ...prev[activeTabId],
+          chat: updatedChat
+        }
+      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to assign tool');
     }
-  }, [openChats]);
+  }, [activeTabId, openChats, tools]);
+
+  const handleDeleteTool = useCallback(async (toolId: number) => {
+    try {
+      setLoadingTools(true);
+      const tool = tools.find(t => t.id === toolId);
+      if (!tool) throw new Error('Tool not found');
+      
+      await chatApi.deleteTool(toolId, tool.is_callable);
+      setTools(prevTools => prevTools.filter(t => t.id !== toolId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete tool');
+    } finally {
+      setLoadingTools(false);
+    }
+  }, [tools]);
 
   const loadSystemPrompts = useCallback(async () => {
     try {
@@ -374,18 +387,6 @@ function App() {
     }
   };
 
-  const handleDeleteTool = async (toolId: number) => {
-    try {
-      setLoadingTools(true);
-      await chatApi.deleteTool(toolId);
-      setTools(prevTools => prevTools.filter(t => t.id !== toolId));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete tool');
-    } finally {
-      setLoadingTools(false);
-    }
-  };
-
   const handleClearHistory = async (chatId: number) => {
     try {
       const updatedChat = await chatApi.clearHistory(chatId);
@@ -461,6 +462,15 @@ function App() {
     }
   }, [activeTabId, openChats]);
 
+  // Helper function to get tool name
+  const getToolName = (tool: Tool | undefined): string | undefined => {
+    if (!tool) return undefined;
+    if (tool.is_callable) {
+      return tool.name;
+    }
+    return tool.schema_name;
+  };
+
   return (
     <div className="flex h-screen">
       {/* Left Sidebar - ChatList */}
@@ -530,7 +540,9 @@ function App() {
                         onAfterClear={loadChats}
                         onClose={() => handleTabClose(activeTabId)}
                         systemPromptName={openChats[activeTabId]?.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === openChats[activeTabId]?.chat.system_prompt_id)?.name : undefined}
-                        toolName={openChats[activeTabId]?.chat.active_tool_id ? tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id)?.schema_name : undefined}
+                        toolName={openChats[activeTabId]?.chat.active_tool_id ? 
+                          getToolName(tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id))
+                          : undefined}
                       />
                     </div>
                   </div>
@@ -561,7 +573,7 @@ function App() {
         tools={tools}
         systemPrompts={systemPrompts}
         onCreateTool={handleCreateTool}
-        onAssignTool={(toolId) => activeTabId ? handleAssignTool(parseInt(activeTabId, 10), toolId) : Promise.resolve()}
+        onAssignTool={handleAssignTool}
         onDeleteTool={handleDeleteTool}
         onUpdateTool={handleUpdateTool}
         onRefreshTools={loadTools}

@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import type { Chat, SystemPrompt, SystemPromptCreate } from '../types';
-import type { Tool, ToolCreate } from '../components/ToolPanel';
+import type { Tool, ToolCreate, TypedTool, CallableTool } from '../components/ToolPanel';
 
 // Add ChatResponse type locally since it's only used in the API
 type ChatResponse = Chat;
@@ -153,8 +153,25 @@ export const chatApi = {
   // Tool-related API methods
   listTools: async (): Promise<Tool[]> => {
     try {
-      const { data } = await api.get<Tool[]>('/tools/');
-      return data;
+      // Fetch both regular and callable tools
+      const [{ data: typedTools }, { data: callableTools }] = await Promise.all([
+        api.get<TypedTool[]>('/tools/'),
+        api.get<CallableTool[]>('/callable-tools/')
+      ]);
+      
+      // Ensure proper typing for both tool types
+      const formattedTypedTools = typedTools.map(tool => ({
+        ...tool,
+        is_callable: false as const
+      }));
+      
+      const formattedCallableTools = callableTools.map(tool => ({
+        ...tool,
+        is_callable: true as const
+      }));
+      
+      // Combine and return all tools
+      return [...formattedTypedTools, ...formattedCallableTools];
     } catch (error) {
       throw handleApiError(error);
     }
@@ -162,8 +179,25 @@ export const chatApi = {
 
   createTool: async (tool: ToolCreate): Promise<Tool> => {
     try {
-      const { data } = await api.post<Tool>('/tools/', tool);
-      return data;
+      if ('is_callable' in tool && tool.is_callable) {
+        const { name, description, input_schema, output_schema } = tool;
+        const { data } = await api.post<CallableTool>('/callable-tools/', {
+          name,
+          description,
+          input_schema,
+          output_schema
+        });
+        return {
+          ...data,
+          is_callable: true as const
+        };
+      } else {
+        const { data } = await api.post<TypedTool>('/tools/', tool);
+        return {
+          ...data,
+          is_callable: false as const
+        };
+      }
     } catch (error) {
       throw handleApiError(error);
     }
@@ -171,22 +205,40 @@ export const chatApi = {
 
   updateTool: async (toolId: number, tool: Partial<ToolCreate>): Promise<Tool> => {
     try {
-      const { data } = await api.patch<Tool>(`/tools/${toolId}`, tool);
-      return data;
+      if ('is_callable' in tool && tool.is_callable) {
+        const { name, description, input_schema, output_schema } = tool;
+        const { data } = await api.patch<CallableTool>(`/callable-tools/${toolId}`, {
+          name,
+          description,
+          input_schema,
+          output_schema
+        });
+        return {
+          ...data,
+          is_callable: true as const
+        };
+      } else {
+        const { data } = await api.patch<TypedTool>(`/tools/${toolId}`, tool);
+        return {
+          ...data,
+          is_callable: false as const
+        };
+      }
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  deleteTool: async (toolId: number): Promise<void> => {
+  deleteTool: async (toolId: number, isCallable: boolean): Promise<void> => {
     try {
-      await api.delete(`/tools/${toolId}`);
+      const endpoint = isCallable ? `/callable-tools/${toolId}` : `/tools/${toolId}`;
+      await api.delete(endpoint);
     } catch (error) {
       throw handleApiError(error);
     }
   },
 
-  assignToolToChat: async (chatId: number, toolId: number): Promise<Chat> => {
+  assignToolToChat: async (chatId: number, toolId: number, isCallable: boolean): Promise<Chat> => {
     try {
       const { data } = await api.put<Chat>(`/${chatId}/tool/${toolId}`);
       return data;

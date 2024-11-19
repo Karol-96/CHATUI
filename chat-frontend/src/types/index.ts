@@ -14,11 +14,14 @@ export interface Chat {
 }
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   uuid?: string;
   parent_message_uuid?: string | null;
   tool_name?: string;
+  tool_call_id?: string;
+  tool_json_schema?: any;
+  tool_call?: any;
   id?: string;
   chatId?: string;
   createdAt?: string;
