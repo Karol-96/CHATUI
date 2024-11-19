@@ -23,18 +23,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const [activePanel, setActivePanel] = React.useState<'tools' | 'system'>('system');
 
   return (
-    <div className="flex flex-col h-full w-64 overflow-hidden" style={{ backgroundColor: tokens.colors.background.white }}>
+    <div className="w-64 bg-white dark:bg-gray-900 h-full flex flex-col border-l border-gray-200 dark:border-gray-700">
       <div 
-        className="flex items-center justify-center p-2 border-b border-gray-200 bg-gray-50 shrink-0"
+        className="flex items-center justify-center p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0"
         style={{ height: tokens.spacing.header }}
       >
-        <div className="bg-gray-200 p-1 rounded-full">
+        <div className="bg-gray-200 dark:bg-gray-700 p-1 rounded-full">
           <button
             onClick={() => setActivePanel('system')}
             className={`px-4 py-1 rounded-full transition-colors ${
               activePanel === 'system'
-                ? 'bg-white text-gray-900 shadow'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
             System
@@ -43,8 +43,8 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             onClick={() => setActivePanel('tools')}
             className={`px-4 py-1 rounded-full transition-colors ${
               activePanel === 'tools'
-                ? 'bg-white text-gray-900 shadow'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 shadow'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
             Tools

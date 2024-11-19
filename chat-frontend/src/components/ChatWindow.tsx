@@ -72,7 +72,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className={`flex-1 overflow-y-auto p-4 ${!isActive && !draftMessage ? 'pb-0' : ''}`}>
+      <div 
+        className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar scrollbar-track-gray-100 dark:scrollbar-track-gray-800 scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 bg-white dark:bg-gray-900 ${!isActive && !draftMessage ? 'pb-0' : ''}`}
+        style={{ scrollBehavior: 'smooth' }}
+      >
         {messages.map((message, index) => (
           <ChatMessage key={message.uuid || index} message={message} />
         ))}
@@ -95,15 +98,15 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           />
         )}
         {error && (
-          <div className="text-red-500 mb-4">{error}</div>
+          <div className="text-red-500 dark:text-red-400 mb-4">{error}</div>
         )}
         <div ref={messagesEndRef} />
       </div>
       {(isActive || draftMessage) && (
-        <form onSubmit={handleSubmit} className="p-4 border-t">
+        <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <textarea
             ref={inputRef}
-            className="w-full p-2 border rounded resize-none outline-none"
+            className="w-full p-2 border border-gray-200 dark:border-gray-700 rounded resize-none outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400"
             rows={3}
             placeholder="Type your message..."
             readOnly={!isActive}
@@ -113,7 +116,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           />
           <button
             type="submit"
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            className="mt-2 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isLoading || !isActive}
           >
             Send

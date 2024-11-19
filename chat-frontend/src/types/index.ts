@@ -164,17 +164,22 @@ export interface TabBarProps {
   tabs: Array<{
     id: string;
     title: string;
+    systemPromptName?: string;
+    toolName?: string;
   }>;
   activeTabId: string | null;
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onTabReorder?: (fromIndex: number, toIndex: number) => void;
+  isTmuxMode: boolean;
+  onTmuxModeToggle: () => void;
 }
 
-export interface TmuxLayoutProps {
+export interface CentralWindowProps {
   openChats: Record<string, ChatState>;
   tabOrder: number[];
-  activeTabId: string;
+  activeTabId: string | null;
+  isTmuxMode: boolean;
   onSendMessage: (message: string) => Promise<void>;
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
@@ -182,8 +187,23 @@ export interface TmuxLayoutProps {
   onAfterClear: () => void;
   tools: Tool[];
   systemPrompts: SystemPrompt[];
-  activeTool: number | null;
-  activeSystemPrompt: number | null;
+  activeTool?: number | null;
+  activeSystemPrompt?: number | null;
+}
+
+export interface TmuxLayoutProps {
+  openChats: Record<string, ChatState>;
+  tabOrder: number[];
+  activeTabId: string | null;
+  onSendMessage: (message: string) => Promise<void>;
+  onTabSelect: (tabId: string) => void;
+  onTabClose: (tabId: string) => void;
+  onAfterDelete: (tabId: string) => void;
+  onAfterClear: () => void;
+  tools: Tool[];
+  systemPrompts: SystemPrompt[];
+  activeTool?: number | null;
+  activeSystemPrompt?: number | null;
 }
 
 export interface ValidationErrors {
@@ -237,4 +257,12 @@ export interface ErrorDisplayProps {
 
 export interface UserPreviewMessageProps {
   content: string;
+}
+
+// Theme types
+export type Theme = 'light' | 'dark';
+
+export interface ThemeContextType {
+  theme: Theme;
+  toggleTheme: () => void;
 }

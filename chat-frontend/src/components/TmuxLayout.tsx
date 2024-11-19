@@ -20,7 +20,7 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
   // Handle tab key navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
+      if (e.key === 'Tab' && activeTabId) {
         e.preventDefault();
         const currentIndex = tabOrder.findIndex(id => id.toString() === activeTabId);
         const nextIndex = (currentIndex + 1) % tabOrder.length;
@@ -66,8 +66,10 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
           return (
             <div
               key={tabId}
-              className={`flex flex-col border rounded-lg overflow-hidden bg-white ${
-                isActive ? 'ring-2 ring-blue-500' : 'border-gray-200'
+              className={`flex flex-col rounded-lg overflow-hidden bg-white dark:bg-gray-900 border-2 ${
+                isActive 
+                  ? 'border-blue-500' 
+                  : 'border-gray-200 dark:border-gray-700'
               }`}
               onClick={() => !isActive && onTabSelect(tabId)}
               role="button"

@@ -26,7 +26,11 @@ const CopyButton: React.FC<CopyButtonProps> = ({ textToCopy }) => {
   return (
     <button
       onClick={handleCopy}
-      className={`ml-auto focus:outline-none ${isCopied ? 'text-green-500' : 'text-gray-500'} transition-colors duration-200`}
+      className={`ml-auto focus:outline-none ${
+        isCopied 
+          ? 'text-green-500 dark:text-green-400 hover:text-green-600 dark:hover:text-green-300' 
+          : 'text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'
+      } transition-colors duration-200`}
       title="Copy JSON"
     >
       {isCopied ? (

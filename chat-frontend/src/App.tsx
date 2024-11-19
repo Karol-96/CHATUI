@@ -3,20 +3,15 @@
 import './index.css';
 import { tokens } from './styles/tokens';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import type { Chat, ChatMessage, ChatState, Tool, ToolCreate, SystemPrompt } from './types/index';
-import { ChatWindow } from './components/ChatWindow';
-import { TabBar } from './components/TabBar';
+import ChatList from './components/ChatList';
+import { RightPanel } from './components/RightPanel';
+import { CentralWindow } from './components/CentralWindow';
 import { chatApi } from './api';
 import { Layout, LayoutGrid } from 'lucide-react';
-import { RightPanel } from './components/RightPanel';
 import { ErrorDisplay } from './components/ErrorDisplay';
-import { ChatControlBar } from './components/ChatControlBar';
-import { TmuxLayout } from './components/TmuxLayout';
-import ChatList from './components/ChatList';
-import { X } from 'lucide-react';
-import { Settings } from 'lucide-react';
-import { ToolPanel } from './components/ToolPanel';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
   // All chats that exist
@@ -470,122 +465,59 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen">
-      {/* Left Sidebar - ChatList */}
-      <ChatList
-        chats={chats}
-        onSelectChat={openChatTab}
-        selectedChatId={activeTabId ? parseInt(activeTabId, 10) : null}
-        onCreateChat={createNewChat}
-        onDeleteChat={handleDeleteChat}
-      />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="bg-white">
-          <div 
-            className="flex items-center border-b border-gray-200" 
-            style={{ height: tokens.spacing.header }}
-          >
-            <TabBar
-              tabs={tabOrder.map(id => ({
-                id: id.toString(),
-                title: openChats[id.toString()]?.chat ? generateChatTitle(openChats[id.toString()].chat) : `Chat ${id}`
-              }))}
-              activeTabId={activeTabId}
-              onTabSelect={setActiveTabId}
-              onTabClose={handleTabClose}
-              onTabReorder={handleTabReorder}
-            />
-            <button
-              onClick={() => setIsTmuxMode(!isTmuxMode)}
-              className="px-4 border-l border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors flex items-center h-full"
-              title={isTmuxMode ? "Switch to single view" : "Switch to grid view"}
-            >
-              {isTmuxMode ? <Layout size={20} /> : <LayoutGrid size={20} />}
-            </button>
-          </div>
-        </header>
+    <ThemeProvider>
+      <div className="flex h-screen overflow-hidden">
+        {/* Left Sidebar */}
+        <ChatList
+          chats={chats}
+          onSelectChat={openChatTab}
+          selectedChatId={activeTabId ? parseInt(activeTabId, 10) : null}
+          onCreateChat={createNewChat}
+          onDeleteChat={handleDeleteChat}
+        />
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-hidden bg-gray-50">
-          {activeTabId && (
-            isTmuxMode ? (
-              <TmuxLayout
-                openChats={openChats}
-                tabOrder={tabOrder}
-                activeTabId={activeTabId}
-                onSendMessage={sendMessageAsync}
-                onTabSelect={setActiveTabId}
-                onTabClose={handleTabClose}
-                onAfterDelete={handleTabClose}
-                onAfterClear={loadChats}
-                tools={tools}
-                systemPrompts={systemPrompts}
-                activeTool={activeTool}
-                activeSystemPrompt={activeSystemPrompt}
-              />
-            ) : (
-              <div className="h-full flex flex-col relative bg-white">
-                <>
-                  {console.log('Rendering content for tab:', activeTabId)}
-                  <div className="sticky top-0 bg-white z-50">
-                    <div className="relative z-50">
-                      <ChatControlBar
-                        chatId={parseInt(activeTabId, 10)}
-                        onAfterDelete={() => handleTabClose(activeTabId)}
-                        onAfterClear={loadChats}
-                        onClose={() => handleTabClose(activeTabId)}
-                        systemPromptName={openChats[activeTabId]?.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === openChats[activeTabId]?.chat.system_prompt_id)?.name : undefined}
-                        toolName={openChats[activeTabId]?.chat.active_tool_id ? 
-                          getToolName(tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id))
-                          : undefined}
-                      />
-                    </div>
-                  </div>
-                  {console.log('ChatWindow props:', {
-                    messages: openChats[activeTabId]?.messages || [],
-                    error: openChats[activeTabId]?.error,
-                    isLoading: openChats[activeTabId]?.isLoading || false,
-                    previewMessage: openChats[activeTabId]?.previewMessage
-                  })}
-                  <ChatWindow
-                    messages={openChats[activeTabId]?.messages || []}
-                    onSendMessage={sendMessageAsync}
-                    error={openChats[activeTabId]?.error}
-                    isLoading={openChats[activeTabId]?.isLoading || false}
-                    previewMessage={openChats[activeTabId]?.previewMessage}
-                    isActive={true}
-                  />
-                </>
-              </div>
-            )
-          )}
-        </main>
+        <div className="flex-1 flex flex-col min-w-0">
+          <CentralWindow
+            openChats={openChats}
+            tabOrder={tabOrder}
+            activeTabId={activeTabId}
+            isTmuxMode={isTmuxMode}
+            onSendMessage={sendMessageAsync}
+            onTabSelect={setActiveTabId}
+            onTabClose={handleTabClose}
+            onAfterDelete={handleTabClose}
+            onAfterClear={loadChats}
+            tools={tools}
+            systemPrompts={systemPrompts}
+            activeTool={activeTool}
+            activeSystemPrompt={activeSystemPrompt}
+            onTmuxModeToggle={() => setIsTmuxMode(!isTmuxMode)}
+          />
+        </div>
+
+        {/* Right Panel */}
+        <RightPanel
+          activeChatId={activeChat?.id ?? null}
+          tools={tools}
+          systemPrompts={systemPrompts}
+          onCreateTool={handleCreateTool}
+          onAssignTool={handleAssignTool}
+          onDeleteTool={handleDeleteTool}
+          onUpdateTool={handleUpdateTool}
+          onRefreshTools={loadTools}
+          onAssignSystemPrompt={handleAssignSystemPrompt}
+          onDeleteSystemPrompt={handleDeleteSystemPrompt}
+          onRefreshSystemPrompts={loadSystemPrompts}
+          loading={loadingTools || loadingSystemPrompts}
+          activeTool={activeTool}
+          activeSystemPrompt={activeSystemPrompt}
+        />
+
+        {/* Global Error Display */}
+        {error && <ErrorDisplay error={error} onDismiss={() => setError(undefined)} />}
       </div>
-
-      {/* Right Sidebar */}
-      <RightPanel
-        activeChatId={activeChat?.id ?? null}
-        tools={tools}
-        systemPrompts={systemPrompts}
-        onCreateTool={handleCreateTool}
-        onAssignTool={handleAssignTool}
-        onDeleteTool={handleDeleteTool}
-        onUpdateTool={handleUpdateTool}
-        onRefreshTools={loadTools}
-        onAssignSystemPrompt={handleAssignSystemPrompt}
-        onDeleteSystemPrompt={handleDeleteSystemPrompt}
-        onRefreshSystemPrompts={loadSystemPrompts}
-        loading={loadingTools || loadingSystemPrompts}
-        activeTool={activeTool}
-        activeSystemPrompt={activeSystemPrompt}
-      />
-
-      {/* Global Error Display */}
-      {error && <ErrorDisplay error={error} onDismiss={() => setError(undefined)} />}
-    </div>
+    </ThemeProvider>
   );
 }
 

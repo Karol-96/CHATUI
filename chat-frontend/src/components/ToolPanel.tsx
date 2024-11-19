@@ -1,5 +1,5 @@
 // src/components/ToolPanel.tsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Plus, Settings, Trash2, Eye, EyeOff, Edit2, RefreshCw, CheckCircle } from 'lucide-react';
 import { tokens } from '../styles/tokens';
 import { Tool, ToolCreate, TypedTool, CallableTool, TypedToolCreate, CallableToolCreate } from '../types';
@@ -182,28 +182,28 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
     return (
       <div
         key={tool.id}
-        className={`p-4 border-b border-gray-100 ${
-          isActive ? 'bg-blue-50' : 'hover:bg-gray-50'
+        className={`p-4 border-b border-gray-100 dark:border-gray-800 ${
+          isActive ? 'bg-blue-50 dark:bg-blue-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
         } transition-colors duration-200`}
       >
         <div className="flex justify-between items-start">
           <div>
             {tool.is_callable ? (
-              <div className="font-medium">{tool.name}</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">{tool.name}</div>
             ) : (
-              <div className="font-medium">{tool.schema_name}</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100">{tool.schema_name}</div>
             )}
             {tool.is_callable ? (
-              <div className="text-sm text-gray-500">{tool.description}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{tool.description}</div>
             ) : (
-              <div className="text-sm text-gray-500">{tool.schema_description}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{tool.schema_description}</div>
             )}
           </div>
           <div className="flex gap-1">
             {!tool.is_callable && (
               <button
                 onClick={() => handleEdit(tool)}
-                className="text-gray-400 hover:text-blue-500 p-1 transition-colors duration-200"
+                className="text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 p-1 transition-colors duration-200"
                 title="Edit tool"
               >
                 <Edit2 className="w-4 h-4" />
@@ -220,7 +220,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
                       }
                     }
               }
-              className={`text-gray-400 hover:text-red-500 p-1 transition-colors duration-200 ${
+              className={`text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-1 transition-colors duration-200 ${
                 isActive ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               title="Delete tool"
@@ -238,8 +238,8 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
               disabled={loading || isActive}
               className={`text-sm px-2 py-1 rounded flex items-center gap-1 transition-colors duration-200 ${
                 isActive 
-                  ? 'bg-blue-100 text-blue-700' 
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300' 
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               } ${loading || isActive ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {isActive ? (
@@ -258,7 +258,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
           {!tool.is_callable && (
             <button
               onClick={() => setShowToolDetails(isShowingDetails ? null : tool.id)}
-              className="text-sm px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200 flex items-center gap-1 transition-colors duration-200"
+              className="text-sm px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors duration-200"
             >
               {isShowingDetails ? (
                 <>
@@ -276,8 +276,8 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
         </div>
         
         {isShowingDetails && !tool.is_callable && (
-          <div className="mt-2 p-2 bg-gray-50 rounded-md">
-            <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+          <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+            <pre className="text-xs overflow-x-auto whitespace-pre-wrap text-gray-900 dark:text-gray-100">
               {JSON.stringify(tool.json_schema, null, 2)}
             </pre>
           </div>
@@ -286,17 +286,19 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
     );
   };
 
+  const toolsContainerRef = useRef<HTMLDivElement>(null);
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div 
-        className="px-4 border-b border-gray-200 flex items-center justify-between shrink-0"
+        className="px-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between shrink-0"
         style={{ height: tokens.spacing.header }}
       >
-        <h2 className="text-lg font-semibold">Tools</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tools</h2>
         <button
           onClick={onRefreshTools}
-          className="p-1 text-gray-500 hover:text-blue-500 transition-colors duration-200"
+          className="p-1 text-gray-500 dark:text-gray-400 hover:text-blue-500 transition-colors duration-200"
           title="Refresh tools"
         >
           <RefreshCw className="w-5 h-5" />
@@ -306,11 +308,14 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
       {/* Main Content Area - Scrollable */}
       <div className="flex flex-col min-h-0 flex-1">
         {/* Tools List - Scrollable */}
-        <div className="flex-1 overflow-y-auto">
+        <div 
+          ref={toolsContainerRef}
+          className="flex-1 overflow-y-auto scrollbar scrollbar-track-gray-100 dark:scrollbar-track-gray-800 scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600"
+        >
           {/* Executable Tools Section */}
           {tools.some(tool => tool.is_callable) && (
             <>
-              <div className="px-4 py-2 bg-gray-50 font-medium text-sm text-gray-600">
+              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 font-medium text-sm text-gray-600 dark:text-gray-400">
                 Executable Tools
               </div>
               {tools.filter(tool => tool.is_callable).map(renderToolItem)}
@@ -320,7 +325,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
           {/* Typed Tools Section */}
           {tools.some(tool => !tool.is_callable) && (
             <>
-              <div className="px-4 py-2 bg-gray-50 font-medium text-sm text-gray-600">
+              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800 font-medium text-sm text-gray-600 dark:text-gray-400">
                 Typed Tools
               </div>
               {tools.filter(tool => !tool.is_callable).map(renderToolItem)}
@@ -329,7 +334,7 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
         </div>
 
         {/* Create New Tool Section - Fixed at Bottom */}
-        <div className="p-4 border-t border-gray-200 bg-white shrink-0">
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0">
           {showCreateForm ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="mb-4">
@@ -337,59 +342,51 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
                   <input
                     type="checkbox"
                     checked={isCallable}
-                    onChange={(e) => {
-                      setIsCallable(e.target.checked);
-                      if (e.target.checked) {
-                        setNewTool({
-                          name: '',
-                          description: '',
-                          input_schema: {},
-                          output_schema: {},
-                          is_callable: true,
-                        });
-                      } else {
-                        setNewTool({
-                          schema_name: '',
-                          schema_description: '',
-                          instruction_string: 'Please follow this JSON schema for your response:',
-                          json_schema: {},
-                          strict_schema: true,
-                        });
-                      }
-                    }}
+                    onChange={(e) => setIsCallable(e.target.checked)}
                     className="mr-2"
                   />
-                  <span>Executable Tool</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Is Callable</span>
                 </label>
               </div>
 
               {isCallable ? (
                 <>
                   <div>
-                    <textarea
-                      placeholder="Name"
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Name
+                    </label>
+                    <input
+                      type="text"
                       value={(newTool as CallableToolCreate & { is_callable: true }).name}
-                      onChange={(e) => setNewTool({ 
-                        ...(newTool as CallableToolCreate & { is_callable: true }), 
-                        name: e.target.value 
-                      })}
-                      className="w-full p-2 border rounded"
+                      onChange={(e) =>
+                        setNewTool({ 
+                          ...(newTool as CallableToolCreate & { is_callable: true }), 
+                          name: e.target.value 
+                        })
+                      }
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Description
+                    </label>
                     <textarea
-                      placeholder="Description"
                       value={(newTool as CallableToolCreate & { is_callable: true }).description}
-                      onChange={(e) => setNewTool({ 
-                        ...(newTool as CallableToolCreate & { is_callable: true }), 
-                        description: e.target.value 
-                      })}
-                      className="w-full p-2 border rounded"
+                      onChange={(e) =>
+                        setNewTool({ 
+                          ...(newTool as CallableToolCreate & { is_callable: true }), 
+                          description: e.target.value 
+                        })
+                      }
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Input Schema
+                    </label>
                     <textarea
-                      placeholder="Input Schema"
                       value={jsonSchemaInput}
                       onChange={(e) => {
                         setJsonSchemaInput(e.target.value);
@@ -403,12 +400,14 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
                           console.error('Invalid JSON format:', error);
                         }
                       }}
-                      className="w-full p-2 border rounded font-mono text-sm"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Output Schema
+                    </label>
                     <textarea
-                      placeholder="Output Schema"
                       value={JSON.stringify((newTool as CallableToolCreate & { is_callable: true }).output_schema, null, 2)}
                       onChange={(e) => {
                         try {
@@ -421,53 +420,63 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
                           console.error('Invalid JSON format:', error);
                         }
                       }}
-                      className="w-full p-2 border rounded font-mono text-sm"
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     />
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <textarea
-                      placeholder="Schema Name"
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Schema Name
+                    </label>
+                    <input
+                      type="text"
                       value={(newTool as TypedToolCreate).schema_name}
-                      onChange={(e) => setNewTool({ 
-                        ...(newTool as TypedToolCreate), 
-                        schema_name: e.target.value 
-                      })}
-                      className={`w-full p-2 border rounded ${
-                        errors.schema_name ? 'border-red-500' : ''
-                      }`}
+                      onChange={(e) =>
+                        setNewTool({ 
+                          ...(newTool as TypedToolCreate), 
+                          schema_name: e.target.value 
+                        })
+                      }
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     />
-                    {errors.schema_name && (
-                      <p className="text-red-500 text-xs mt-1">{errors.schema_name}</p>
-                    )}
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Schema Description
+                    </label>
                     <textarea
-                      placeholder="Schema Description"
                       value={(newTool as TypedToolCreate).schema_description}
-                      onChange={(e) => setNewTool({ 
-                        ...(newTool as TypedToolCreate), 
-                        schema_description: e.target.value 
-                      })}
-                      className="w-full p-2 border rounded"
+                      onChange={(e) =>
+                        setNewTool({ 
+                          ...(newTool as TypedToolCreate), 
+                          schema_description: e.target.value 
+                        })
+                      }
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Instruction String
+                    </label>
                     <textarea
-                      placeholder="Instruction String"
                       value={(newTool as TypedToolCreate).instruction_string}
-                      onChange={(e) => setNewTool({ 
-                        ...(newTool as TypedToolCreate), 
-                        instruction_string: e.target.value 
-                      })}
-                      className="w-full p-2 border rounded"
+                      onChange={(e) =>
+                        setNewTool({ 
+                          ...(newTool as TypedToolCreate), 
+                          instruction_string: e.target.value 
+                        })
+                      }
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     />
                   </div>
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      JSON Schema
+                    </label>
                     <textarea
-                      placeholder="JSON Schema"
                       value={jsonSchemaInput}
                       onChange={(e) => {
                         setJsonSchemaInput(e.target.value);
@@ -481,13 +490,8 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
                           console.error('Invalid JSON format:', error);
                         }
                       }}
-                      className={`w-full p-2 border rounded font-mono text-sm ${
-                        errors.json_schema ? 'border-red-500' : ''
-                      }`}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md font-mono text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     />
-                    {errors.json_schema && (
-                      <p className="text-red-500 text-xs mt-1">{errors.json_schema}</p>
-                    )}
                   </div>
                 </>
               )}
@@ -502,8 +506,11 @@ export const ToolPanel: React.FC<ToolPanelProps> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={resetForm}
-                  className="py-2 px-4 border border-gray-300 rounded hover:bg-gray-50 transition-colors duration-200"
+                  onClick={() => {
+                    setShowCreateForm(false);
+                    setEditingTool(null);
+                  }}
+                  className="py-2 px-4 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200"
                 >
                   Cancel
                 </button>
