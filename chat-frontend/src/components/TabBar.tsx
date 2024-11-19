@@ -1,18 +1,11 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { tokens } from '../styles/tokens';
+import { TabBarProps } from '../types';
 
 interface Tab {
   id: string;
   title: string;
-}
-
-interface TabBarProps {
-  tabs: Tab[];
-  activeTabId: string | null;
-  onTabSelect: (tabId: string) => void;
-  onTabClose: (tabId: string) => void;
-  onTabReorder?: (fromIndex: number, toIndex: number) => void;
 }
 
 export const TabBar: React.FC<TabBarProps> = ({

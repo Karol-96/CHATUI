@@ -1,8 +1,7 @@
 // src/api/index.ts
 
 import axios from 'axios';
-import type { Chat, SystemPrompt, SystemPromptCreate } from '../types';
-import type { Tool, ToolCreate, TypedTool, CallableTool } from '../components/ToolPanel';
+import type { Chat, SystemPrompt, SystemPromptCreate, Tool, ToolCreate, TypedTool, CallableTool } from '../types';
 
 // Add ChatResponse type locally since it's only used in the API
 type ChatResponse = Chat;

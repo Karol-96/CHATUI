@@ -2,10 +2,8 @@
 
 import React from 'react';
 import { User } from 'lucide-react';
-
-interface UserPreviewMessageProps {
-  content: string;
-}
+import { UserPreviewMessageProps } from '../types';
+import { tokens } from '../styles/tokens';
 
 export const UserPreviewMessage: React.FC<UserPreviewMessageProps> = ({ content }) => {
   return (

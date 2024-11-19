@@ -64,3 +64,177 @@ export interface SystemPromptCreate {
   name: string;
   content: string;
 }
+
+// Tool-specific interfaces
+export interface BaseTool {
+  id: number;
+  is_callable: boolean;
+}
+
+export interface TypedTool extends BaseTool {
+  is_callable: false;
+  schema_name: string;
+  schema_description: string;
+  instruction_string: string;
+  json_schema: Record<string, any>;
+  strict_schema: boolean;
+}
+
+export interface CallableTool extends BaseTool {
+  is_callable: true;
+  name: string;
+  description: string;
+  input_schema: Record<string, any>;
+  output_schema: Record<string, any>;
+}
+
+export type Tool = TypedTool | CallableTool;
+
+export interface TypedToolCreate {
+  schema_name: string;
+  schema_description: string;
+  instruction_string: string;
+  json_schema: Record<string, any>;
+  strict_schema: boolean;
+}
+
+export interface CallableToolCreate {
+  name: string;
+  description: string;
+  input_schema: Record<string, any>;
+  output_schema: Record<string, any>;
+}
+
+export type ToolCreate = TypedToolCreate | (CallableToolCreate & { is_callable: true });
+
+// Component Props Interfaces
+export interface ChatMessageProps {
+  message: ChatMessage;
+}
+
+export interface ChatInputProps {
+  onSendMessage: (message: string) => void;
+  disabled?: boolean;
+  autoFocus?: boolean;
+}
+
+export interface ChatControlBarProps {
+  chatId: number;
+  onAfterDelete: () => void;
+  onAfterClear: () => void;
+  onClose?: () => void;
+  title?: string;
+  systemPromptName?: string;
+  toolName?: string;
+  isTmux?: boolean;
+}
+
+export interface ChatWindowProps {
+  messages: ChatMessage[];
+  onSendMessage: (message: string) => Promise<void>;
+  error?: string;
+  isLoading?: boolean;
+  previewMessage?: string;
+  isActive?: boolean;
+}
+
+export interface DataViewerProps {
+  data: unknown;
+  tool_name?: string;
+}
+
+export interface DataNodeProps {
+  data: unknown;
+  path?: string;
+  depth?: number;
+  tool_name?: string;
+}
+
+export interface SystemPanelProps {
+  systemPrompts: SystemPrompt[];
+  selectedChatId: number | null;
+  onAssignSystemPrompt: (promptId: number) => Promise<void>;
+  onRefreshSystemPrompts: () => Promise<void>;
+  onDeleteSystemPrompt: (promptId: number) => Promise<void>;
+  loading: boolean;
+  activeSystemPrompt: number | null;
+}
+
+export interface TabBarProps {
+  tabs: Array<{
+    id: string;
+    title: string;
+  }>;
+  activeTabId: string | null;
+  onTabSelect: (tabId: string) => void;
+  onTabClose: (tabId: string) => void;
+  onTabReorder?: (fromIndex: number, toIndex: number) => void;
+}
+
+export interface TmuxLayoutProps {
+  openChats: Record<string, ChatState>;
+  tabOrder: number[];
+  activeTabId: string;
+  onSendMessage: (message: string) => Promise<void>;
+  onTabSelect: (tabId: string) => void;
+  onTabClose: (tabId: string) => void;
+  onAfterDelete: (tabId: string) => void;
+  onAfterClear: () => void;
+  tools: Tool[];
+  systemPrompts: SystemPrompt[];
+  activeTool: number | null;
+  activeSystemPrompt: number | null;
+}
+
+export interface ValidationErrors {
+  [key: string]: string | undefined;
+}
+
+export interface ChatListProps {
+  chats: Chat[];
+  onSelectChat: (chat: Chat) => void;
+  selectedChatId: number | null;
+  onCreateChat?: () => void;
+  onDeleteChat?: (chatId: number) => void;
+}
+
+export interface RightPanelProps {
+  activeChatId: number | null;
+  tools: Tool[];
+  systemPrompts: SystemPrompt[];
+  onCreateTool: (tool: ToolCreate) => Promise<void>;
+  onAssignTool: (toolId: number) => Promise<void>;
+  onDeleteTool: (toolId: number) => Promise<void>;
+  onUpdateTool: (toolId: number, tool: ToolCreate) => Promise<void>;
+  onRefreshTools: () => Promise<void>;
+  onAssignSystemPrompt: (promptId: number) => Promise<void>;
+  onDeleteSystemPrompt: (promptId: number) => Promise<void>;
+  onRefreshSystemPrompts: () => Promise<void>;
+  loading: boolean;
+  activeTool: number | null;
+  activeSystemPrompt: number | null;
+}
+
+export interface CopyButtonProps {
+  textToCopy: string;
+}
+
+import { ReactNode } from 'react';
+
+export interface ErrorBoundaryProps {
+  children?: ReactNode;
+}
+
+export interface ErrorBoundaryState {
+  hasError: boolean;
+  error?: Error;
+}
+
+export interface ErrorDisplayProps {
+  error: string | Error | null;
+  onDismiss: () => void;
+}
+
+export interface UserPreviewMessageProps {
+  content: string;
+}

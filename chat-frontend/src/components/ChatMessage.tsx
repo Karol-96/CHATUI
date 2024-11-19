@@ -10,10 +10,10 @@ import {
   GanttChartSquare
 } from 'lucide-react';
 import DataViewer from './DataViewer';
-import type { ChatMessage as ChatMessageType } from '../types';
+import { ChatMessage as Message } from '../types';
 
 interface ChatMessageProps {
-  message: ChatMessageType | undefined;
+  message: Message | undefined;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {

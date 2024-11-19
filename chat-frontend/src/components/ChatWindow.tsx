@@ -1,15 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChatMessage as Message } from '../types';
+import { ChatMessage as Message, ChatWindowProps } from '../types';
 import { ChatMessage } from './ChatMessage';
-
-interface ChatWindowProps {
-  messages: Message[];
-  onSendMessage: (message: string) => Promise<void>;
-  error?: string;
-  isLoading?: boolean;
-  previewMessage?: string;
-  isActive?: boolean;
-}
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
   messages,

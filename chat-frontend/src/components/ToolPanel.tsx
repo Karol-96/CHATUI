@@ -2,48 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { Plus, Settings, Trash2, Eye, EyeOff, Edit2, RefreshCw, CheckCircle } from 'lucide-react';
 import { tokens } from '../styles/tokens';
-
-// Tool-specific interfaces
-export interface BaseTool {
-  id: number;
-  is_callable: boolean;
-}
-
-export interface TypedTool extends BaseTool {
-  is_callable: false;
-  schema_name: string;
-  schema_description: string;
-  instruction_string: string;
-  json_schema: Record<string, any>;
-  strict_schema: boolean;
-}
-
-export interface CallableTool extends BaseTool {
-  is_callable: true;
-  name: string;
-  description: string;
-  input_schema: Record<string, any>;
-  output_schema: Record<string, any>;
-}
-
-export type Tool = TypedTool | CallableTool;
-
-export interface TypedToolCreate {
-  schema_name: string;
-  schema_description: string;
-  instruction_string: string;
-  json_schema: Record<string, any>;
-  strict_schema: boolean;
-}
-
-export interface CallableToolCreate {
-  name: string;
-  description: string;
-  input_schema: Record<string, any>;
-  output_schema: Record<string, any>;
-}
-
-export type ToolCreate = TypedToolCreate | (CallableToolCreate & { is_callable: true });
+import { Tool, ToolCreate, TypedTool, CallableTool, TypedToolCreate, CallableToolCreate } from '../types';
 
 interface ToolPanelProps {
   tools: Tool[];

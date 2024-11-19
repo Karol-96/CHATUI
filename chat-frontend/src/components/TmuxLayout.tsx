@@ -1,24 +1,7 @@
 import React, { useEffect } from 'react';
 import { ChatWindow } from './ChatWindow';
 import { ChatControlBar } from './ChatControlBar';
-import { ChatState } from '../types';
-import { Tool } from './ToolPanel';
-import { SystemPrompt } from '../types';
-
-interface TmuxLayoutProps {
-  openChats: Record<string, ChatState>;
-  tabOrder: number[];
-  activeTabId: string;
-  onSendMessage: (message: string) => Promise<void>;
-  onTabSelect: (tabId: string) => void;
-  onTabClose: (tabId: string) => void;
-  onAfterDelete: (tabId: string) => void;
-  onAfterClear: () => void;
-  tools: Tool[];
-  systemPrompts: SystemPrompt[];
-  activeTool: number | null;
-  activeSystemPrompt: number | null;
-}
+import { ChatState, Tool, SystemPrompt, TmuxLayoutProps } from '../types';
 
 export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
   openChats,

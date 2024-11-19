@@ -4,9 +4,7 @@ import './index.css';
 import { tokens } from './styles/tokens';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Chat, ChatMessage, ChatState } from './types';
-import type { Tool, ToolCreate } from './components/ToolPanel';
-import type { SystemPrompt } from './types';
+import type { Chat, ChatMessage, ChatState, Tool, ToolCreate, SystemPrompt } from './types/index';
 import { ChatWindow } from './components/ChatWindow';
 import { TabBar } from './components/TabBar';
 import { chatApi } from './api';

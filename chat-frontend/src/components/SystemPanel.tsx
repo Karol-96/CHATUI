@@ -1,18 +1,8 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Plus, RefreshCw, Eye, EyeOff, Edit2, Settings, CheckCircle, Trash2 } from 'lucide-react';
-import type { SystemPrompt, SystemPromptCreate } from '../types';
+import { SystemPrompt, SystemPromptCreate, SystemPanelProps, ValidationErrors } from '../types';
 import { tokens } from '../styles/tokens';
 import { chatApi } from '../api';
-
-interface SystemPanelProps {
-  systemPrompts: SystemPrompt[];
-  selectedChatId: number | null;
-  onAssignSystemPrompt: (promptId: number) => Promise<void>;
-  onRefreshSystemPrompts: () => Promise<void>;
-  onDeleteSystemPrompt: (promptId: number) => Promise<void>;
-  loading: boolean;
-  activeSystemPrompt: number | null;
-}
 
 export const SystemPanel: React.FC<SystemPanelProps> = ({
   systemPrompts,

@@ -1,16 +1,8 @@
 // src/components/ChatList.tsx
 import React from 'react';
-import { Chat } from '../types';
+import { Chat, ChatListProps } from '../types';
 import { Plus, X } from 'lucide-react';
 import { tokens } from '../styles/tokens';
-
-interface ChatListProps {
-  chats: Chat[];
-  onSelectChat: (chat: Chat) => void;
-  selectedChatId: number | null;
-  onCreateChat?: () => void;
-  onDeleteChat?: (chatId: number) => void;
-}
 
 const ChatList: React.FC<ChatListProps> = ({
   chats,

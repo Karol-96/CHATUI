@@ -1,16 +1,6 @@
 import React from 'react';
 import { RefreshCw, Trash2, X } from 'lucide-react';
-
-interface ChatControlBarProps {
-  chatId: number;
-  onAfterDelete: () => void;
-  onAfterClear: () => void;
-  onClose?: () => void;
-  title?: string;
-  systemPromptName?: string;
-  toolName?: string;
-  isTmux?: boolean;
-}
+import { ChatControlBarProps } from '../types';
 
 export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   chatId,

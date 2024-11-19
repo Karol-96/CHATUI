@@ -1,11 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Send, Minimize2, Maximize2 } from 'lucide-react';
-
-interface ChatInputProps {
-  onSendMessage: (content: string) => void;
-  disabled?: boolean;
-  autoFocus?: boolean;
-}
+import { ChatInputProps } from '../types';
 
 const DEFAULT_HEIGHT = 44;
 

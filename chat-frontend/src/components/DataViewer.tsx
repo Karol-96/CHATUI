@@ -2,21 +2,10 @@
 import React from 'react';
 import { ChevronRight, Circle, Square, Triangle, Hash, List } from 'lucide-react';
 import CopyButton from './CopyButton';
+import { DataViewerProps, DataNodeProps } from '../types';
 
-interface DataViewerProps {
-  data: unknown;
-  tool_name?: string;  // Changed to match server property name
-}
-
-interface DataNodeProps {
-  data: unknown;
-  path?: string;
-  depth?: number;
-  tool_name?: string;  // Changed to match server property name
-}
-
-const DataViewer: React.FC<DataViewerProps> = ({ data, tool_name }) => {  // Changed prop name
-  const DataNode: React.FC<DataNodeProps> = ({ data, path = '', depth = 0, tool_name }) => {  // Changed prop name
+const DataViewer: React.FC<DataViewerProps> = ({ data, tool_name }) => {  
+  const DataNode: React.FC<DataNodeProps> = ({ data, path = '', depth = 0, tool_name }) => {  
     const [isExpanded, setIsExpanded] = React.useState(true);
     const isObject = data !== null && typeof data === 'object';
 

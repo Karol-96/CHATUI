@@ -1,26 +1,8 @@
 import React from 'react';
 import { ToolPanel } from './ToolPanel';
 import { SystemPanel } from './SystemPanel';
-import type { Tool, ToolCreate } from './ToolPanel';
-import type { SystemPrompt } from '../types';
+import type { Tool, ToolCreate, SystemPrompt, RightPanelProps } from '../types';
 import { tokens } from '../styles/tokens';
-
-interface RightPanelProps {
-  activeChatId: number | null;
-  tools: Tool[];
-  systemPrompts: SystemPrompt[];
-  onCreateTool: (tool: ToolCreate) => Promise<void>;
-  onAssignTool: (toolId: number) => Promise<void>;
-  onDeleteTool: (toolId: number) => Promise<void>;
-  onUpdateTool: (toolId: number, tool: Partial<ToolCreate>) => Promise<void>;
-  onRefreshTools: () => Promise<void>;
-  onAssignSystemPrompt: (promptId: number) => Promise<void>;
-  onDeleteSystemPrompt: (promptId: number) => Promise<void>;
-  onRefreshSystemPrompts: () => Promise<void>;
-  loading: boolean;
-  activeTool: number | null;
-  activeSystemPrompt: number | null;
-}
 
 export const RightPanel: React.FC<RightPanelProps> = ({
   activeChatId,
@@ -36,12 +18,12 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   onRefreshSystemPrompts,
   loading,
   activeTool,
-  activeSystemPrompt
+  activeSystemPrompt,
 }) => {
   const [activePanel, setActivePanel] = React.useState<'tools' | 'system'>('system');
 
   return (
-    <div className="flex flex-col h-full w-64 overflow-hidden">
+    <div className="flex flex-col h-full w-64 overflow-hidden" style={{ backgroundColor: tokens.colors.background.white }}>
       <div 
         className="flex items-center justify-center p-2 border-b border-gray-200 bg-gray-50 shrink-0"
         style={{ height: tokens.spacing.header }}
@@ -79,7 +61,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             onRefreshTools={onRefreshTools}
             onDeleteTool={onDeleteTool}
             onCreateTool={onCreateTool}
-            onUpdateTool={onUpdateTool}
+            onUpdateTool={(toolId: number, tool: Partial<ToolCreate>) => onUpdateTool(toolId, tool as ToolCreate)}
             loading={loading}
             activeTool={activeTool}
           />
