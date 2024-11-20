@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ToolPanel } from './ToolPanel';
 import { SystemPanel } from './SystemPanel';
 import type { Tool, ToolCreate, SystemPrompt, RightPanelProps } from '../types';
@@ -19,8 +19,15 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   loading,
   activeTool,
   activeSystemPrompt,
+  chatState,
 }) => {
   const [activePanel, setActivePanel] = React.useState<'tools' | 'system'>('system');
+
+  // Refresh when active chat changes
+  useEffect(() => {
+    onRefreshTools();
+    onRefreshSystemPrompts();
+  }, [activeChatId, onRefreshTools, onRefreshSystemPrompts]);
 
   return (
     <div className="w-64 bg-white dark:bg-gray-900 h-full flex flex-col border-l border-gray-200 dark:border-gray-700">

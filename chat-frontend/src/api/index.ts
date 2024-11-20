@@ -1,7 +1,7 @@
 // src/api/index.ts
 
 import axios from 'axios';
-import type { Chat, SystemPrompt, SystemPromptCreate, Tool, ToolCreate, TypedTool, CallableTool, LLMConfigUpdate } from '../types';
+import type { Chat, SystemPrompt, SystemPromptCreate, Tool, ToolCreate, TypedTool, CallableTool, LLMConfigUpdate, LLMConfig } from '../types';
 
 // Add ChatResponse type locally since it's only used in the API
 type ChatResponse = Chat;
@@ -285,6 +285,15 @@ export const chatApi = {
   updateLLMConfig: async (chatId: number, config: LLMConfigUpdate): Promise<Chat> => {
     try {
       const response = await api.put<Chat>(`/${chatId}/llm-config`, config);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  getLLMConfig: async (chatId: number): Promise<LLMConfig> => {
+    try {
+      const response = await api.get<LLMConfig>(`/${chatId}/llm-config`);
       return response.data;
     } catch (error) {
       throw handleApiError(error);

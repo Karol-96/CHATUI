@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { ChatMessage as Message, ChatWindowProps } from '../types';
+import { ChatMessage as Message, ChatWindowProps, MessageRole } from '../types';
 import { ChatMessage } from './ChatMessage';
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({
@@ -82,18 +82,20 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         {pendingMessage && (
           <ChatMessage
             message={{
-              role: 'user',
+              role: MessageRole.user,
               content: pendingMessage,
-              uuid: 'pending-user'
+              uuid: 'pending-user',
+              timestamp: new Date()
             }}
           />
         )}
         {isLoading && (
           <ChatMessage
             message={{
-              role: 'assistant',
+              role: MessageRole.assistant,
               content: 'Thinking deeply...',
-              uuid: 'preview'
+              uuid: 'preview',
+              timestamp: new Date()
             }}
           />
         )}

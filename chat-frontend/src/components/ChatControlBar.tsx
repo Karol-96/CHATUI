@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Trash2, X, Eraser, Wand2, Wrench, Settings } from 'lucide-react';
-import { ChatControlBarProps, LLMConfigUpdate } from '../types';
+import { ChatControlBarProps, LLMConfig, LLMConfigUpdate } from '../types';
 import { chatApi } from '../api';
 import { LLMConfigMenu } from './LLMConfigMenu';
 
@@ -15,6 +15,25 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   isTmux = false,
 }) => {
   const [isConfigMenuOpen, setIsConfigMenuOpen] = useState(false);
+  const [currentConfig, setCurrentConfig] = useState<LLMConfig | undefined>(undefined);
+
+  const fetchConfig = useCallback(async () => {
+    try {
+      const config = await chatApi.getLLMConfig(chatId);
+      setCurrentConfig(config);
+    } catch (error) {
+      console.error('Error fetching LLM config:', error);
+    }
+  }, [chatId]);
+
+  // Fetch config when menu is opened
+  useEffect(() => {
+    if (isConfigMenuOpen) {
+      fetchConfig();
+    } else {
+      setCurrentConfig(undefined); // Clear state when menu is closed
+    }
+  }, [isConfigMenuOpen, fetchConfig]);
 
   const handleClearHistory = async () => {
     try {
@@ -37,6 +56,7 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   const handleUpdateLLMConfig = async (config: LLMConfigUpdate) => {
     try {
       await chatApi.updateLLMConfig(chatId, config);
+      await fetchConfig(); // Refetch to get latest state
     } catch (error) {
       console.error('Error updating LLM config:', error);
     }
@@ -74,8 +94,8 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
         <div className="group relative">
           <button
             onClick={() => setIsConfigMenuOpen(true)}
-            className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1 rounded"
-            title="LLM Settings"
+            className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none"
+            onMouseDown={(e) => e.preventDefault()} // Prevent focus
           >
             <Settings size={20} />
           </button>
@@ -116,6 +136,7 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
         isOpen={isConfigMenuOpen}
         onClose={() => setIsConfigMenuOpen(false)}
         onUpdate={handleUpdateLLMConfig}
+        currentConfig={currentConfig}
       />
     </div>
   );

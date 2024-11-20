@@ -162,15 +162,28 @@ function App() {
     }
   }, []);
 
-  // Load tools on mount
-  useEffect(() => {
-    loadTools();
+  const loadSystemPrompts = useCallback(async () => {
+    try {
+      setLoadingSystemPrompts(true);
+      const loadedPrompts = await chatApi.listSystemPrompts();
+      // Sort prompts by ID to maintain consistent order, just like tools
+      const sortedPrompts = [...loadedPrompts].sort((a, b) => {
+        if (a.id === undefined || b.id === undefined) return 0;
+        return a.id - b.id;
+      });
+      setSystemPrompts(sortedPrompts);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load system prompts');
+    } finally {
+      setLoadingSystemPrompts(false);
+    }
   }, []);
 
-  // Initial load
+  // Load tools and system prompts on mount
   useEffect(() => {
     loadTools();
-  }, [loadTools]);
+    loadSystemPrompts();
+  }, []);
 
   const handleAssignTool = useCallback(async (toolId: number) => {
     if (!activeTabId) return;
@@ -212,28 +225,6 @@ function App() {
       setLoadingTools(false);
     }
   }, [tools]);
-
-  const loadSystemPrompts = useCallback(async () => {
-    try {
-      setLoadingSystemPrompts(true);
-      const loadedPrompts = await chatApi.listSystemPrompts();
-      // Sort prompts by ID to maintain consistent order, just like tools
-      const sortedPrompts = [...loadedPrompts].sort((a, b) => {
-        if (a.id === undefined || b.id === undefined) return 0;
-        return a.id - b.id;
-      });
-      setSystemPrompts(sortedPrompts);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load system prompts');
-    } finally {
-      setLoadingSystemPrompts(false);
-    }
-  }, []);
-
-  // Load system prompts on mount
-  useEffect(() => {
-    loadSystemPrompts();
-  }, [loadSystemPrompts]);
 
   const handleAssignSystemPrompt = useCallback(async (promptId: number) => {
     if (!activeTabId) return;
@@ -498,7 +489,7 @@ function App() {
 
         {/* Right Panel */}
         <RightPanel
-          activeChatId={activeChat?.id ?? null}
+          activeChatId={activeTabId ? parseInt(activeTabId, 10) : null}
           tools={tools}
           systemPrompts={systemPrompts}
           onCreateTool={handleCreateTool}
@@ -512,6 +503,7 @@ function App() {
           loading={loadingTools || loadingSystemPrompts}
           activeTool={activeTool}
           activeSystemPrompt={activeSystemPrompt}
+          chatState={activeTabId ? openChats[activeTabId] : undefined}
         />
 
         {/* Global Error Display */}

@@ -2,28 +2,57 @@
 
 import { ReactNode } from 'react';
 
+// Core types
+export type UUID = string;
+
+export enum MessageRole {
+  user = 'user',
+  assistant = 'assistant',
+  system = 'system',
+  tool = 'tool'
+}
+
+export enum LLMClient {
+  openai = 'openai'
+}
+
+export enum ResponseFormat {
+  text = "text",
+  tool = "tool",
+  auto_tools = "auto_tools"
+}
+
 // Core chat interfaces used across components
 export interface Chat {
-  id: number;  // Changed from string to number to match API
-  title: string;
-  toolId?: string;
-  createdAt: string;
+  id: number;
+  uuid: UUID;
+  name?: string;
+  new_message?: string;
   history: ChatMessage[];
-  active_tool_id?: number | string;
-  system_prompt_id?: number | string;  // Added to match backend
-  system_prompt?: { id: number };  // Keep for backward compatibility
+  system_prompt?: SystemPrompt;
+  system_prompt_id?: number;
+  active_tool_id?: number;
+  auto_tools_ids: number[];
+  // Keeping these for backward compatibility
+  title?: string;
+  toolId?: string;
+  createdAt?: string;
+  system_prompt_uuid?: UUID;
   tool?: { id: number };
 }
 
 export interface ChatMessage {
-  role: 'user' | 'assistant' | 'system' | 'tool';
+  role: MessageRole;
   content: string;
-  uuid?: string;
-  parent_message_uuid?: string | null;
+  author_name?: string;
+  uuid: UUID;
+  parent_message_uuid?: UUID;
   tool_name?: string;
   tool_call_id?: string;
-  tool_json_schema?: any;
-  tool_call?: any;
+  tool_json_schema?: Record<string, any>;
+  tool_call?: Record<string, any>;
+  timestamp: Date;
+  // Keeping these for backward compatibility
   id?: string;
   chatId?: string;
   createdAt?: string;
@@ -57,7 +86,7 @@ export interface ApiError extends Error {
 // System prompt interfaces
 export interface SystemPrompt {
   id?: number;
-  uuid?: string;
+  uuid: UUID;
   name: string;
   content: string;
 }
@@ -67,7 +96,7 @@ export interface SystemPromptCreate {
   content: string;
 }
 
-// Tool-specific interfaces
+// Tool interfaces
 export interface BaseTool {
   id: number;
   is_callable: boolean;
@@ -108,6 +137,33 @@ export interface CallableToolCreate {
 }
 
 export type ToolCreate = TypedToolCreate | (CallableToolCreate & { is_callable: true });
+
+export interface CallableToolResponse extends CallableTool {
+  is_registered: boolean;
+}
+
+// LLM Configuration types
+export interface LLMConfig {
+  client: LLMClient;
+  model?: string;
+  max_tokens: number;
+  temperature: number;
+  response_format: ResponseFormat;
+  use_cache: boolean;
+}
+
+export interface LLMConfigUpdate {
+  client?: LLMClient;
+  model?: string;
+  max_tokens?: number;
+  temperature?: number;
+  response_format?: ResponseFormat;
+  use_cache?: boolean;
+}
+
+export interface LLMConfigResponse extends LLMConfig {
+  id: number;
+}
 
 // Component Props Interfaces
 export interface ChatMessageProps {
@@ -235,6 +291,7 @@ export interface RightPanelProps {
   loading: boolean;
   activeTool: number | null;
   activeSystemPrompt: number | null;
+  chatState?: ChatState;
 }
 
 export interface CopyButtonProps {
@@ -257,25 +314,6 @@ export interface ErrorDisplayProps {
 
 export interface UserPreviewMessageProps {
   content: string;
-}
-
-// LLM Configuration types
-export enum ResponseFormat {
-  text = "text",
-  tool = "tool",
-  auto_tools = "auto_tools"
-}
-
-export interface LLMConfig {
-  max_tokens: number;
-  temperature: number;
-  response_format: ResponseFormat;
-}
-
-export interface LLMConfigUpdate {
-  max_tokens?: number;
-  temperature?: number;
-  response_format?: ResponseFormat;
 }
 
 // Theme types
