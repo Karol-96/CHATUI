@@ -1,5 +1,7 @@
 // src/types/index.ts
 
+import { ReactNode } from 'react';
+
 // Core chat interfaces used across components
 export interface Chat {
   id: number;  // Changed from string to number to match API
@@ -49,7 +51,7 @@ export interface ApiError extends Error {
     data?: ApiErrorResponse;
   };
   request?: unknown;
-  code?: string;
+  isAxiosError?: boolean;
 }
 
 // System prompt interfaces
@@ -239,8 +241,6 @@ export interface CopyButtonProps {
   textToCopy: string;
 }
 
-import { ReactNode } from 'react';
-
 export interface ErrorBoundaryProps {
   children?: ReactNode;
 }
@@ -257,6 +257,25 @@ export interface ErrorDisplayProps {
 
 export interface UserPreviewMessageProps {
   content: string;
+}
+
+// LLM Configuration types
+export enum ResponseFormat {
+  text = "text",
+  tool = "tool",
+  auto_tools = "auto_tools"
+}
+
+export interface LLMConfig {
+  max_tokens: number;
+  temperature: number;
+  response_format: ResponseFormat;
+}
+
+export interface LLMConfigUpdate {
+  max_tokens?: number;
+  temperature?: number;
+  response_format?: ResponseFormat;
 }
 
 // Theme types

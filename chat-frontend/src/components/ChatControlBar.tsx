@@ -1,6 +1,8 @@
-import React from 'react';
-import { RefreshCw, Trash2, X, Eraser, Wand2, Wrench } from 'lucide-react';
-import { ChatControlBarProps } from '../types';
+import React, { useState } from 'react';
+import { RefreshCw, Trash2, X, Eraser, Wand2, Wrench, Settings } from 'lucide-react';
+import { ChatControlBarProps, LLMConfigUpdate } from '../types';
+import { chatApi } from '../api';
+import { LLMConfigMenu } from './LLMConfigMenu';
 
 export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   chatId,
@@ -12,9 +14,11 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   toolName,
   isTmux = false,
 }) => {
+  const [isConfigMenuOpen, setIsConfigMenuOpen] = useState(false);
+
   const handleClearHistory = async () => {
     try {
-      await fetch(`/api/chats/${chatId}/clear`, { method: 'POST' });
+      await chatApi.clearHistory(chatId);
       onAfterClear();
     } catch (error) {
       console.error('Error clearing chat history:', error);
@@ -23,10 +27,18 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
 
   const handleDeleteChat = async () => {
     try {
-      await fetch(`/api/chats/${chatId}`, { method: 'DELETE' });
+      await chatApi.deleteChat(chatId);
       onAfterDelete();
     } catch (error) {
       console.error('Error deleting chat:', error);
+    }
+  };
+
+  const handleUpdateLLMConfig = async (config: LLMConfigUpdate) => {
+    try {
+      await chatApi.updateLLMConfig(chatId, config);
+    } catch (error) {
+      console.error('Error updating LLM config:', error);
     }
   };
 
@@ -50,51 +62,61 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
         <div className="group relative">
           <button
             onClick={handleClearHistory}
-            className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1 rounded"
+            className="text-gray-500 dark:text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 p-1 rounded"
             title="Clear chat history"
           >
-            <RefreshCw size={20} />
+            <Eraser size={20} />
           </button>
           <div className="hidden group-hover:block absolute left-0 top-full mt-1 px-2 py-1 text-xs text-white dark:text-gray-200 bg-gray-800 dark:bg-gray-900 rounded whitespace-nowrap z-50">
             Clear chat history
           </div>
         </div>
+        <div className="group relative">
+          <button
+            onClick={() => setIsConfigMenuOpen(true)}
+            className="text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 p-1 rounded"
+            title="LLM Settings"
+          >
+            <Settings size={20} />
+          </button>
+          <div className="hidden group-hover:block absolute left-0 top-full mt-1 px-2 py-1 text-xs text-white dark:text-gray-200 bg-gray-800 dark:bg-gray-900 rounded whitespace-nowrap z-50">
+            LLM Settings
+          </div>
+        </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <div className={`flex items-center ${isTmux ? 'space-x-1 text-xs' : 'space-x-2 text-sm'}`}>
-          <span className="text-gray-500 dark:text-gray-400 whitespace-nowrap">
-            {isTmux ? 'N:' : 'Name:'} <span className={`font-medium text-gray-900 dark:text-gray-100 ${isTmux ? 'max-w-[100px]' : 'max-w-[200px]'} truncate inline-block align-bottom`}>{title}</span>
-          </span>
-          {systemPromptName && (
-            <div className="flex items-center px-2 py-1 bg-purple-50 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 rounded text-sm font-medium">
-              <Wand2 size={16} className="mr-1" />
-              {systemPromptName}
-            </div>
-          )}
-          {toolName && (
-            <div className="flex items-center px-2 py-1 bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded text-sm font-medium">
-              <Wrench size={16} className="mr-1" />
-              {toolName}
-            </div>
-          )}
-        </div>
+      <div className="flex-1 mx-4 flex items-center justify-center space-x-2 truncate">
+        <span className="truncate text-gray-700 dark:text-gray-300">{title}</span>
+        {systemPromptName && (
+          <>
+            <Wand2 size={16} className="text-purple-500" />
+            <span className="text-sm text-purple-500 truncate">{systemPromptName}</span>
+          </>
+        )}
+        {toolName && (
+          <>
+            <Wrench size={16} className="text-blue-500" />
+            <span className="text-sm text-blue-500 truncate">{toolName}</span>
+          </>
+        )}
       </div>
 
       {onClose && (
-        <div className="group relative pr-0.5">
-          <button
-            onClick={onClose}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded"
-            title="Close chat"
-          >
-            <X size={20} />
-          </button>
-          <div className="hidden group-hover:block absolute right-0 top-full mt-1 px-2 py-1 text-xs text-white dark:text-gray-200 bg-gray-800 dark:bg-gray-900 rounded whitespace-nowrap z-50">
-            Close chat
-          </div>
-        </div>
+        <button
+          onClick={onClose}
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1"
+          title="Close chat"
+        >
+          <X size={20} />
+        </button>
       )}
+
+      <LLMConfigMenu
+        chatId={chatId}
+        isOpen={isConfigMenuOpen}
+        onClose={() => setIsConfigMenuOpen(false)}
+        onUpdate={handleUpdateLLMConfig}
+      />
     </div>
   );
 };

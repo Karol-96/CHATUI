@@ -1,7 +1,7 @@
 // src/api/index.ts
 
 import axios from 'axios';
-import type { Chat, SystemPrompt, SystemPromptCreate, Tool, ToolCreate, TypedTool, CallableTool } from '../types';
+import type { Chat, SystemPrompt, SystemPromptCreate, Tool, ToolCreate, TypedTool, CallableTool, LLMConfigUpdate } from '../types';
 
 // Add ChatResponse type locally since it's only used in the API
 type ChatResponse = Chat;
@@ -277,6 +277,15 @@ export const chatApi = {
   deleteSystemPrompt: async (promptId: number): Promise<void> => {
     try {
       await api.delete(`/system-prompts/${promptId}`);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  updateLLMConfig: async (chatId: number, config: LLMConfigUpdate): Promise<Chat> => {
+    try {
+      const response = await api.put<Chat>(`/${chatId}/llm-config`, config);
+      return response.data;
     } catch (error) {
       throw handleApiError(error);
     }
