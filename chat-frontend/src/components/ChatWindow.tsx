@@ -73,7 +73,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   return (
     <div className="flex flex-col h-full">
       <div 
-        className={`flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar scrollbar-track-gray-100 dark:scrollbar-track-gray-800 scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 bg-white dark:bg-gray-900 ${!isActive && !draftMessage ? 'pb-0' : ''}`}
+        className={`flex-1 overflow-y-auto min-h-0 px-4 py-4 space-y-4 scrollbar scrollbar-track-gray-100 dark:scrollbar-track-gray-800 scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 bg-white dark:bg-gray-900 ${!isActive && !draftMessage ? 'pb-0' : ''}`}
         style={{ scrollBehavior: 'smooth' }}
       >
         {messages.map((message, index) => (
@@ -103,7 +103,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <div ref={messagesEndRef} />
       </div>
       {(isActive || draftMessage) && (
-        <form onSubmit={handleSubmit} className="p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <form onSubmit={handleSubmit} className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <textarea
             ref={inputRef}
             className="w-full p-2 border border-gray-200 dark:border-gray-700 rounded resize-none outline-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 dark:focus:border-blue-400"

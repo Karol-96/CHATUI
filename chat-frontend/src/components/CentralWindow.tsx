@@ -59,26 +59,28 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-gray-50 dark:bg-gray-900">
       {/* Tab Bar */}
-      <TabBar
-        tabs={tabOrder.map(id => ({
-          id: id.toString(),
-          title: openChats[id.toString()]?.chat.title || `Chat ${id}`,
-          systemPromptName: openChats[id.toString()]?.chat.system_prompt_id ? 
-            systemPrompts.find(sp => sp.id === openChats[id.toString()]?.chat.system_prompt_id)?.name 
-            : undefined,
-          toolName: openChats[id.toString()]?.chat.active_tool_id ? 
-            getToolName(tools.find(t => t.id === openChats[id.toString()]?.chat.active_tool_id))
-            : undefined
-        }))}
-        activeTabId={activeTabId}
-        onTabSelect={onTabSelect}
-        onTabClose={onTabClose}
-        isTmuxMode={isTmuxMode}
-        onTmuxModeToggle={onTmuxModeToggle}
-      />
+      <div className="flex-shrink-0">
+        <TabBar
+          tabs={tabOrder.map(id => ({
+            id: id.toString(),
+            title: openChats[id.toString()]?.chat.title || `Chat ${id}`,
+            systemPromptName: openChats[id.toString()]?.chat.system_prompt_id ? 
+              systemPrompts.find(sp => sp.id === openChats[id.toString()]?.chat.system_prompt_id)?.name 
+              : undefined,
+            toolName: openChats[id.toString()]?.chat.active_tool_id ? 
+              getToolName(tools.find(t => t.id === openChats[id.toString()]?.chat.active_tool_id))
+              : undefined
+          }))}
+          activeTabId={activeTabId}
+          onTabSelect={onTabSelect}
+          onTabClose={onTabClose}
+          isTmuxMode={isTmuxMode}
+          onTmuxModeToggle={onTmuxModeToggle}
+        />
+      </div>
 
       {/* Content Area */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 overflow-auto">
         {isTmuxMode ? (
           <TmuxLayout
             openChats={openChats}
@@ -93,27 +95,31 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
         ) : (
           activeTabId && (
             <div className="h-full flex flex-col">
-              <ChatControlBar
-                chatId={parseInt(activeTabId, 10)}
-                onAfterDelete={() => onAfterDelete(activeTabId)}
-                onAfterClear={onAfterClear}
-                onClose={() => onTabClose(activeTabId)}
-                title={openChats[activeTabId]?.chat.title}
-                systemPromptName={openChats[activeTabId]?.chat.system_prompt_id ? 
-                  systemPrompts.find(sp => sp.id === openChats[activeTabId]?.chat.system_prompt_id)?.name 
-                  : undefined}
-                toolName={openChats[activeTabId]?.chat.active_tool_id ? 
-                  getToolName(tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id))
-                  : undefined}
-              />
-              <ChatWindow
-                messages={openChats[activeTabId].messages}
-                error={openChats[activeTabId].error}
-                isLoading={openChats[activeTabId].isLoading}
-                previewMessage={openChats[activeTabId].previewMessage}
-                isActive={true}
-                {...commonProps}
-              />
+              <div className="flex-shrink-0">
+                <ChatControlBar
+                  chatId={parseInt(activeTabId, 10)}
+                  onAfterDelete={() => onAfterDelete(activeTabId)}
+                  onAfterClear={onAfterClear}
+                  onClose={() => onTabClose(activeTabId)}
+                  title={openChats[activeTabId]?.chat.title}
+                  systemPromptName={openChats[activeTabId]?.chat.system_prompt_id ? 
+                    systemPrompts.find(sp => sp.id === openChats[activeTabId]?.chat.system_prompt_id)?.name 
+                    : undefined}
+                  toolName={openChats[activeTabId]?.chat.active_tool_id ? 
+                    getToolName(tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id))
+                    : undefined}
+                />
+              </div>
+              <div className="flex-1 min-h-0">
+                <ChatWindow
+                  messages={openChats[activeTabId].messages}
+                  error={openChats[activeTabId].error}
+                  isLoading={openChats[activeTabId].isLoading}
+                  previewMessage={openChats[activeTabId].previewMessage}
+                  isActive={true}
+                  {...commonProps}
+                />
+              </div>
             </div>
           )
         )}
