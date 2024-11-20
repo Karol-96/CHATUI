@@ -1,8 +1,12 @@
-import React, { useEffect } from 'react';
+// RightPanel.tsx
+
+import React, { useEffect, useState } from 'react';
 import { ToolPanel } from './ToolPanel';
+import { AutoToolsPanel } from './AutoToolsPanel';
 import { SystemPanel } from './SystemPanel';
-import type { Tool, ToolCreate, SystemPrompt, RightPanelProps } from '../types';
+import { Tool, ToolCreate, SystemPrompt, RightPanelProps, LLMConfig } from '../types';
 import { tokens } from '../styles/tokens';
+import { chatApi } from '../api';
 
 export const RightPanel: React.FC<RightPanelProps> = ({
   activeChatId,
@@ -22,6 +26,22 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   chatState,
 }) => {
   const [activePanel, setActivePanel] = React.useState<'tools' | 'system'>('system');
+  const [currentConfig, setCurrentConfig] = useState<LLMConfig>();
+
+  // Fetch LLM config when active chat changes
+  useEffect(() => {
+    const fetchConfig = async () => {
+      if (activeChatId) {
+        try {
+          const config = await chatApi.getLLMConfig(activeChatId);
+          setCurrentConfig(config);
+        } catch (error) {
+          console.error('Error fetching LLM config:', error);
+        }
+      }
+    };
+    fetchConfig();
+  }, [activeChatId]);
 
   // Refresh when active chat changes
   useEffect(() => {
@@ -29,9 +49,48 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     onRefreshSystemPrompts();
   }, [activeChatId, onRefreshTools, onRefreshSystemPrompts]);
 
+  // Render appropriate panel based on response format
+  const renderToolPanel = () => {
+    if (!currentConfig) return null;
+
+    if (currentConfig.response_format === 'auto_tools') {
+      return (
+        <AutoToolsPanel
+          tools={tools}
+          selectedChatId={activeChatId}
+          onCreateTool={onCreateTool}
+          onDeleteTool={onDeleteTool}
+          onUpdateTool={(toolId: number, tool: Partial<ToolCreate>) =>
+            onUpdateTool(toolId, tool as ToolCreate)
+          }
+          onRefreshTools={onRefreshTools}
+          loading={loading}
+          // Remove the 'activeTool' prop here
+          autoToolsIds={chatState?.chat.auto_tools_ids || []}
+        />
+      );
+    }
+
+    return (
+      <ToolPanel
+        tools={tools}
+        selectedChatId={activeChatId}
+        onCreateTool={onCreateTool}
+        onAssignTool={onAssignTool}
+        onDeleteTool={onDeleteTool}
+        onUpdateTool={(toolId: number, tool: Partial<ToolCreate>) =>
+          onUpdateTool(toolId, tool as ToolCreate)
+        }
+        onRefreshTools={onRefreshTools}
+        loading={loading}
+        activeTool={activeTool}
+      />
+    );
+  };
+
   return (
     <div className="w-64 bg-white dark:bg-gray-900 h-full flex flex-col border-l border-gray-200 dark:border-gray-700">
-      <div 
+      <div
         className="flex items-center justify-center p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0"
         style={{ height: tokens.spacing.header }}
       >
@@ -58,32 +117,19 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           </button>
         </div>
       </div>
-
-      <div className="flex-1 overflow-hidden">
-        {activePanel === 'tools' ? (
-          <ToolPanel
-            tools={tools}
-            selectedChatId={activeChatId}
-            onAssignTool={onAssignTool}
-            onRefreshTools={onRefreshTools}
-            onDeleteTool={onDeleteTool}
-            onCreateTool={onCreateTool}
-            onUpdateTool={(toolId: number, tool: Partial<ToolCreate>) => onUpdateTool(toolId, tool as ToolCreate)}
-            loading={loading}
-            activeTool={activeTool}
-          />
-        ) : (
-          <SystemPanel
-            systemPrompts={systemPrompts}
-            selectedChatId={activeChatId}
-            onAssignSystemPrompt={onAssignSystemPrompt}
-            onRefreshSystemPrompts={onRefreshSystemPrompts}
-            onDeleteSystemPrompt={onDeleteSystemPrompt}
-            loading={loading}
-            activeSystemPrompt={activeSystemPrompt}
-          />
-        )}
-      </div>
+      {activePanel === 'system' ? (
+        <SystemPanel
+          systemPrompts={systemPrompts}
+          selectedChatId={activeChatId}
+          onAssignSystemPrompt={onAssignSystemPrompt}
+          onRefreshSystemPrompts={onRefreshSystemPrompts}
+          onDeleteSystemPrompt={onDeleteSystemPrompt}
+          loading={loading}
+          activeSystemPrompt={activeSystemPrompt}
+        />
+      ) : (
+        renderToolPanel()
+      )}
     </div>
   );
 };
