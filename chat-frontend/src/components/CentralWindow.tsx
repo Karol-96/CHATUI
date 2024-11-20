@@ -63,7 +63,8 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
         <TabBar
           tabs={tabOrder.map(id => ({
             id: id.toString(),
-            title: openChats[id.toString()]?.chat.title || `Chat ${id}`,
+            chatId: id,
+            name: openChats[id.toString()]?.chat.name,
             systemPromptName: openChats[id.toString()]?.chat.system_prompt_id ? 
               systemPrompts.find(sp => sp.id === openChats[id.toString()]?.chat.system_prompt_id)?.name 
               : undefined,
@@ -100,14 +101,13 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
                   chatId={parseInt(activeTabId, 10)}
                   onAfterDelete={() => onAfterDelete(activeTabId)}
                   onAfterClear={onAfterClear}
-                  onClose={() => onTabClose(activeTabId)}
-                  title={openChats[activeTabId]?.chat.title}
                   systemPromptName={openChats[activeTabId]?.chat.system_prompt_id ? 
                     systemPrompts.find(sp => sp.id === openChats[activeTabId]?.chat.system_prompt_id)?.name 
                     : undefined}
                   toolName={openChats[activeTabId]?.chat.active_tool_id ? 
                     getToolName(tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id))
                     : undefined}
+                  isTmux={isTmuxMode}
                 />
               </div>
               <div className="flex-1 min-h-0">

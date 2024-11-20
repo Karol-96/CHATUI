@@ -5,7 +5,8 @@ import { TabBarProps } from '../types';
 
 interface Tab {
   id: string;
-  title: string;
+  name?: string;
+  chatId: number;
   systemPromptName?: string;
   toolName?: string;
 }
@@ -62,7 +63,7 @@ export const TabBar: React.FC<TabBarProps> = ({
               onClick={() => onTabSelect(tab.id)}
             >
               <div className="flex-1 truncate text-sm font-medium">
-                <div>{tab.title}</div>
+                <div>{tab.name || `Chat ${tab.chatId}`}</div>
                 {(tab.systemPromptName || tab.toolName) && (
                   <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     {tab.systemPromptName && `System: ${tab.systemPromptName}`}

@@ -48,7 +48,7 @@ const ChatList: React.FC<ChatListProps> = ({
                   selectedChatId === chat.id
                     ? 'text-blue-700 dark:text-blue-400'
                     : 'text-gray-700 dark:text-gray-300'
-                }`}>Chat {chat.id}</div>
+                }`}>{chat.name || `Chat ${chat.id}`}</div>
                 <div className={`text-sm truncate ${
                   selectedChatId === chat.id
                     ? 'text-blue-600/80 dark:text-blue-300/80'

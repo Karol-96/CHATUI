@@ -116,11 +116,10 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
             >
               <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
                 <ChatControlBar
-                  chatId={parseInt(chatId.toString(), 10)}
+                  chatId={chatId}
                   onAfterDelete={() => onAfterDelete(tabId)}
                   onAfterClear={onAfterClear}
                   onClose={() => onTabClose(tabId)}
-                  title={chatState.chat.title || `Chat ${chatId}`}
                   systemPromptName={chatState.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === chatState.chat.system_prompt_id)?.name : undefined}
                   toolName={chatState.chat.active_tool_id ? 
                     getToolName(tools.find(t => t.id === chatState.chat.active_tool_id))

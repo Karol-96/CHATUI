@@ -9,7 +9,6 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   onAfterDelete,
   onAfterClear,
   onClose,
-  title = `Chat ${chatId}`,
   systemPromptName,
   toolName,
   isTmux = false,
@@ -106,7 +105,7 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
       </div>
 
       <div className="flex-1 mx-4 flex items-center justify-center space-x-2 truncate">
-        <span className="truncate text-gray-700 dark:text-gray-300">{title}</span>
+        <span className="truncate text-gray-700 dark:text-gray-300">{`Chat ${chatId}`}</span>
         {systemPromptName && (
           <>
             <Wand2 size={16} className="text-purple-500" />

@@ -149,6 +149,15 @@ export const chatApi = {
     }
   },
 
+  updateChatName: async (chatId: number, name: string): Promise<Chat> => {
+    try {
+      const { data } = await api.put<Chat>(`/${chatId}/name`, { name });
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
   // Tool-related API methods
   listTools: async (): Promise<Tool[]> => {
     try {

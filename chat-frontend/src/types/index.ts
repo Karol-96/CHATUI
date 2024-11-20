@@ -34,8 +34,6 @@ export interface Chat {
   active_tool_id?: number;
   auto_tools_ids: number[];
   // Keeping these for backward compatibility
-  title?: string;
-  toolId?: string;
   createdAt?: string;
   system_prompt_uuid?: UUID;
   tool?: { id: number };
@@ -181,7 +179,6 @@ export interface ChatControlBarProps {
   onAfterDelete: () => void;
   onAfterClear: () => void;
   onClose?: () => void;
-  title?: string;
   systemPromptName?: string;
   toolName?: string;
   isTmux?: boolean;
@@ -221,7 +218,8 @@ export interface SystemPanelProps {
 export interface TabBarProps {
   tabs: Array<{
     id: string;
-    title: string;
+    name?: string;
+    chatId: number;
     systemPromptName?: string;
     toolName?: string;
   }>;

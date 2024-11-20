@@ -73,32 +73,62 @@ function App() {
     }
   }, []);
 
+  // Set default name for a chat if it doesn't have one
+  const ensureChatHasName = async (chat: Chat) => {
+    if (!chat.name) {
+      try {
+        return await chatApi.updateChatName(chat.id, `Chat ${chat.id}`);
+      } catch (err) {
+        console.error(`Failed to set default name for chat ${chat.id}:`, err);
+        return chat;
+      }
+    }
+    return chat;
+  };
+
   // Load existing chats
   const loadChats = useCallback(async () => {
     try {
       const loadedChats = await chatApi.listChats();
-      setChats(loadedChats);
+      
+      // Only set names on first load
+      if (chats.length === 0) {
+        const updatedChats = await Promise.all(loadedChats.map(ensureChatHasName));
+        setChats(updatedChats);
+      } else {
+        setChats(loadedChats);
+      }
 
-      // For any already open chats, update their data with fresh API data
-      const updatedChats = { ...openChats };
+      // For any already open chats, update their data
+      const updatedOpenChats = { ...openChats };
+      let hasChanges = false;
+      
       for (const tabId of Object.keys(openChats)) {
         try {
           const freshChat = await chatApi.getChat(parseInt(tabId, 10));
-          updatedChats[tabId] = {
-            ...updatedChats[tabId],
-            chat: freshChat,
-            messages: freshChat.history || []
-          };
+          // Only update if there are actual changes
+          if (JSON.stringify(freshChat) !== JSON.stringify(openChats[tabId].chat)) {
+            updatedOpenChats[tabId] = {
+              ...updatedOpenChats[tabId],
+              chat: freshChat,
+              messages: freshChat.history || []
+            };
+            hasChanges = true;
+          }
         } catch (err) {
           console.error(`Failed to refresh chat ${tabId}:`, err);
         }
       }
-      setOpenChats(updatedChats);
+      
+      // Only update openChats if there were actual changes
+      if (hasChanges) {
+        setOpenChats(updatedOpenChats);
+      }
     } catch (error) {
       console.error('Failed to load chats:', error);
       setError(error instanceof Error ? error.message : 'Failed to load chats');
     }
-  }, []); // Remove openChats from dependencies
+  }, []); // Remove dependencies since this is a refresh function
 
   // Initial load
   useEffect(() => {
@@ -184,6 +214,31 @@ function App() {
     loadTools();
     loadSystemPrompts();
   }, []);
+
+  const createNewChat = useCallback(async () => {
+    try {
+      let newChat = await chatApi.createChat();
+      // Ensure the new chat has a name
+      newChat = await ensureChatHasName(newChat);
+      
+      setChats(prevChats => [...prevChats, newChat]);
+      await openChatTab(newChat);
+
+      // If there's a system prompt assigned to the chat, update the state
+      if (newChat.system_prompt_id) {
+        const promptId = typeof newChat.system_prompt_id === 'string'
+          ? parseInt(newChat.system_prompt_id, 10)
+          : newChat.system_prompt_id;
+        setActiveSystemPrompt(promptId);
+      } else if (newChat.system_prompt?.id) {
+        // Backward compatibility
+        setActiveSystemPrompt(newChat.system_prompt.id);
+      }
+    } catch (error) {
+      console.error('Failed to create chat:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create chat');
+    }
+  }, [openChatTab]);
 
   const handleAssignTool = useCallback(async (toolId: number) => {
     if (!activeTabId) return;
@@ -277,29 +332,6 @@ function App() {
       console.error('Failed to delete system prompt:', error);
     }
   }, [loadSystemPrompts]);
-
-  const createNewChat = useCallback(async () => {
-    try {
-      const newChat = await chatApi.createChat();
-      
-      setChats(prev => [...prev, newChat]);
-      await openChatTab(newChat);
-
-      // If there's a system prompt assigned to the chat, update the state
-      if (newChat.system_prompt_id) {
-        const promptId = typeof newChat.system_prompt_id === 'string'
-          ? parseInt(newChat.system_prompt_id, 10)
-          : newChat.system_prompt_id;
-        setActiveSystemPrompt(promptId);
-      } else if (newChat.system_prompt?.id) {
-        // Backward compatibility
-        setActiveSystemPrompt(newChat.system_prompt.id);
-      }
-    } catch (error) {
-      console.error('Failed to create chat:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create chat');
-    }
-  }, [openChatTab]);
 
   const sendMessageAsync = useCallback(async (content: string) => {
     if (!activeTabId) return;
