@@ -179,6 +179,7 @@ export interface ChatControlBarProps {
   onAfterDelete: () => void;
   onAfterClear: () => void;
   onClose?: () => void;
+  onNameUpdate?: () => void;
   systemPromptName?: string;
   toolName?: string;
   isTmux?: boolean;

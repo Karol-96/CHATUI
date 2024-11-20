@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Trash2, X, Eraser, Wand2, Wrench, Settings } from 'lucide-react';
-import { ChatControlBarProps, LLMConfig, LLMConfigUpdate } from '../types';
+import { RefreshCw, Trash2, X, Eraser, Wand2, Wrench, Settings, Edit2, MessageSquare, Bot } from 'lucide-react';
+import { ChatControlBarProps, LLMConfig, LLMConfigUpdate, ResponseFormat } from '../types';
 import { chatApi } from '../api';
 import { LLMConfigMenu } from './LLMConfigMenu';
 
@@ -9,12 +9,15 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   onAfterDelete,
   onAfterClear,
   onClose,
+  onNameUpdate,
   systemPromptName,
   toolName,
   isTmux = false,
 }) => {
   const [isConfigMenuOpen, setIsConfigMenuOpen] = useState(false);
   const [currentConfig, setCurrentConfig] = useState<LLMConfig | undefined>(undefined);
+  const [isEditing, setIsEditing] = useState(false);
+  const [chatName, setChatName] = useState<string>(`Chat ${chatId}`);
 
   const fetchConfig = useCallback(async () => {
     try {
@@ -25,14 +28,30 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
     }
   }, [chatId]);
 
-  // Fetch config when menu is opened
+  // Fetch LLM config when component mounts and when config menu is closed
   useEffect(() => {
-    if (isConfigMenuOpen) {
+    fetchConfig();
+  }, [fetchConfig]);
+
+  // Refetch config when menu is closed
+  useEffect(() => {
+    if (!isConfigMenuOpen) {
       fetchConfig();
-    } else {
-      setCurrentConfig(undefined); // Clear state when menu is closed
     }
   }, [isConfigMenuOpen, fetchConfig]);
+
+  // Fetch chat name
+  useEffect(() => {
+    const fetchChat = async () => {
+      try {
+        const chat = await chatApi.getChat(chatId);
+        setChatName(chat.name || `Chat ${chatId}`);
+      } catch (error) {
+        console.error('Error fetching chat:', error);
+      }
+    };
+    fetchChat();
+  }, [chatId]);
 
   const handleClearHistory = async () => {
     try {
@@ -52,12 +71,25 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
     }
   };
 
+  // Handle LLM config update
   const handleUpdateLLMConfig = async (config: LLMConfigUpdate) => {
     try {
       await chatApi.updateLLMConfig(chatId, config);
-      await fetchConfig(); // Refetch to get latest state
+      await fetchConfig(); // Refetch config after update
+      setIsConfigMenuOpen(false);
     } catch (error) {
       console.error('Error updating LLM config:', error);
+    }
+  };
+
+  const handleNameUpdate = async (newName: string) => {
+    try {
+      await chatApi.updateChatName(chatId, newName);
+      setChatName(newName);
+      setIsEditing(false);
+      onNameUpdate?.(); // Call the callback if provided
+    } catch (error) {
+      console.error('Error updating chat name:', error);
     }
   };
 
@@ -99,44 +131,107 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
             <Settings size={20} />
           </button>
           <div className="hidden group-hover:block absolute left-0 top-full mt-1 px-2 py-1 text-xs text-white dark:text-gray-200 bg-gray-800 dark:bg-gray-900 rounded whitespace-nowrap z-50">
-            LLM Settings
+            Configure LLM settings
           </div>
         </div>
       </div>
 
-      <div className="flex-1 mx-4 flex items-center justify-center space-x-2 truncate">
-        <span className="truncate text-gray-700 dark:text-gray-300">{`Chat ${chatId}`}</span>
-        {systemPromptName && (
-          <>
-            <Wand2 size={16} className="text-purple-500" />
-            <span className="text-sm text-purple-500 truncate">{systemPromptName}</span>
-          </>
-        )}
-        {toolName && (
-          <>
-            <Wrench size={16} className="text-blue-500" />
-            <span className="text-sm text-blue-500 truncate">{toolName}</span>
-          </>
-        )}
+      <div className="flex-1 mx-4">
+        <div className="flex items-center justify-center space-x-2 overflow-hidden">
+          <div className="inline-flex items-center justify-center px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 min-w-[100px] max-w-[200px] shrink">
+            {isEditing ? (
+              <input
+                type="text"
+                value={chatName}
+                onChange={(e) => setChatName(e.target.value)}
+                onBlur={() => handleNameUpdate(chatName)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleNameUpdate(chatName);
+                  } else if (e.key === 'Escape') {
+                    setIsEditing(false);
+                  }
+                }}
+                className="w-full bg-transparent text-center focus:outline-none text-gray-900 dark:text-gray-100 text-sm"
+                autoFocus
+              />
+            ) : (
+              <div className="flex items-center justify-center space-x-2">
+                <MessageSquare size={14} className="text-gray-700 dark:text-gray-300 flex-shrink-0" />
+                <span className="text-gray-900 dark:text-gray-100 truncate text-sm" title={chatName}>{chatName}</span>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0"
+                >
+                  <Edit2 size={14} />
+                </button>
+              </div>
+            )}
+          </div>
+
+          {systemPromptName && (
+            <div className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-md border border-blue-200 dark:border-blue-800 flex items-center space-x-1 flex-shrink-0">
+              <Wand2 size={14} className="text-blue-700 dark:text-blue-300" />
+              <span className="text-blue-700 dark:text-blue-300 text-sm truncate" title={systemPromptName}>{systemPromptName}</span>
+            </div>
+          )}
+
+          {toolName && (
+            <div className="px-3 py-1 bg-purple-50 dark:bg-purple-900/20 rounded-md border border-purple-200 dark:border-purple-800 flex items-center space-x-1 flex-shrink-0">
+              <Wrench size={14} className="text-purple-700 dark:text-purple-300" />
+              <span className="text-purple-700 dark:text-purple-300 text-sm truncate" title={toolName}>{toolName}</span>
+            </div>
+          )}
+
+          {currentConfig?.response_format && (
+            <div className={`px-3 py-1 rounded-md border flex items-center space-x-1 flex-shrink-0 ${
+              currentConfig.response_format === ResponseFormat.text 
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                : currentConfig.response_format === ResponseFormat.tool
+                ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+            }`}>
+              <Bot size={14} className={
+                currentConfig.response_format === ResponseFormat.text
+                  ? 'text-green-700 dark:text-green-300'
+                  : currentConfig.response_format === ResponseFormat.tool
+                  ? 'text-orange-700 dark:text-orange-300'
+                  : 'text-yellow-700 dark:text-yellow-300'
+              } />
+              <span className={`text-sm truncate ${
+                currentConfig.response_format === ResponseFormat.text
+                  ? 'text-green-700 dark:text-green-300'
+                  : currentConfig.response_format === ResponseFormat.tool
+                  ? 'text-orange-700 dark:text-orange-300'
+                  : 'text-yellow-700 dark:text-yellow-300'
+              }`} title={currentConfig.response_format}>
+                {currentConfig.response_format === ResponseFormat.auto_tools 
+                  ? 'AutoTools'
+                  : currentConfig.response_format.charAt(0).toUpperCase() + currentConfig.response_format.slice(1)}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {onClose && (
+      <div className="flex items-center space-x-2">
         <button
           onClick={onClose}
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1"
-          title="Close chat"
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded"
         >
           <X size={20} />
         </button>
-      )}
+      </div>
 
-      <LLMConfigMenu
-        chatId={chatId}
-        isOpen={isConfigMenuOpen}
-        onClose={() => setIsConfigMenuOpen(false)}
-        onUpdate={handleUpdateLLMConfig}
-        currentConfig={currentConfig}
-      />
+      {isConfigMenuOpen && (
+        <LLMConfigMenu
+          chatId={chatId}
+          isOpen={isConfigMenuOpen}
+          onClose={() => setIsConfigMenuOpen(false)}
+          onUpdate={handleUpdateLLMConfig}
+          currentConfig={currentConfig}
+        />
+      )}
     </div>
   );
 };

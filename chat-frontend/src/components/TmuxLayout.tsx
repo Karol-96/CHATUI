@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { ChatWindow } from './ChatWindow';
 import { ChatControlBar } from './ChatControlBar';
-import { ChatState, Tool, SystemPrompt, TmuxLayoutProps } from '../types';
+import { ChatState, Tool, SystemPrompt, TmuxLayoutProps, ResponseFormat } from '../types';
 
 export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
   openChats,
@@ -120,6 +120,7 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
                   onAfterDelete={() => onAfterDelete(tabId)}
                   onAfterClear={onAfterClear}
                   onClose={() => onTabClose(tabId)}
+                  onNameUpdate={onAfterClear}
                   systemPromptName={chatState.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === chatState.chat.system_prompt_id)?.name : undefined}
                   toolName={chatState.chat.active_tool_id ? 
                     getToolName(tools.find(t => t.id === chatState.chat.active_tool_id))

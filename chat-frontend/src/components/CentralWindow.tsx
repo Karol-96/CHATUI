@@ -3,7 +3,7 @@ import { ChatWindow } from './ChatWindow';
 import { TmuxLayout } from './TmuxLayout';
 import { TabBar } from './TabBar';
 import { ChatControlBar } from './ChatControlBar';
-import { ChatState, Tool, SystemPrompt } from '../types';
+import { ChatState, Tool, SystemPrompt, ResponseFormat } from '../types';
 
 interface CentralWindowProps {
   openChats: Record<string, ChatState>;
@@ -101,6 +101,7 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
                   chatId={parseInt(activeTabId, 10)}
                   onAfterDelete={() => onAfterDelete(activeTabId)}
                   onAfterClear={onAfterClear}
+                  onNameUpdate={onAfterClear}
                   systemPromptName={openChats[activeTabId]?.chat.system_prompt_id ? 
                     systemPrompts.find(sp => sp.id === openChats[activeTabId]?.chat.system_prompt_id)?.name 
                     : undefined}
