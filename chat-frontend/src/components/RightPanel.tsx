@@ -1,6 +1,6 @@
 // RightPanel.tsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { ToolPanel } from './ToolPanel';
 import { AutoToolsPanel } from './AutoToolsPanel';
 import { SystemPanel } from './SystemPanel';
@@ -24,30 +24,43 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   activeTool,
   activeSystemPrompt,
   chatState,
+  activityState,
 }) => {
   const [activePanel, setActivePanel] = React.useState<'tools' | 'system'>('system');
   const [currentConfig, setCurrentConfig] = useState<LLMConfig>();
 
-  // Fetch LLM config when active chat changes
+  // Calculate total message count across all roles (excluding llmConfig)
+  const totalMessageCount = useMemo(() => {
+    const globalMessages = activityState.global.messages;
+    const total = Object.values(globalMessages).reduce((sum, count) => sum + count, 0);
+    console.log('RightPanel - Total message count:', total, 'Global messages:', globalMessages);
+    return total;
+  }, [activityState.global.messages]);
+
+  // Update on any message changes
   useEffect(() => {
-    const fetchConfig = async () => {
+    console.log('RightPanel - Effect triggered. Total messages:', totalMessageCount);
+    const fetchConfigAndTools = async () => {
       if (activeChatId) {
         try {
           const config = await chatApi.getLLMConfig(activeChatId);
+          console.log('RightPanel - Fetched new config:', config);
           setCurrentConfig(config);
+          onRefreshTools();
+          onRefreshSystemPrompts();
         } catch (error) {
           console.error('Error fetching LLM config:', error);
         }
       }
     };
-    fetchConfig();
-  }, [activeChatId]);
 
-  // Refresh when active chat changes
-  useEffect(() => {
-    onRefreshTools();
-    onRefreshSystemPrompts();
-  }, [activeChatId, onRefreshTools, onRefreshSystemPrompts]);
+    fetchConfigAndTools();
+  }, [
+    activeChatId,
+    totalMessageCount,
+    onRefreshTools,
+    onRefreshSystemPrompts
+  ]);
 
   // Render appropriate panel based on response format
   const renderToolPanel = () => {
@@ -65,7 +78,6 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           }
           onRefreshTools={onRefreshTools}
           loading={loading}
-          // Remove the 'activeTool' prop here
           autoToolsIds={chatState?.chat.auto_tools_ids || []}
         />
       );

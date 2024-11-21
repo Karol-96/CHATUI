@@ -4,7 +4,8 @@ import './index.css';
 import { tokens } from './styles/tokens';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import type { Chat, ChatMessage, ChatState, Tool, ToolCreate, SystemPrompt } from './types/index';
+import type { Chat, ChatMessage, ChatState, Tool, ToolCreate, SystemPrompt, ActivityState } from './types/index';
+import { MessageRole } from './types/index';
 import ChatList from './components/ChatList';
 import { RightPanel } from './components/RightPanel';
 import { CentralWindow } from './components/CentralWindow';
@@ -28,6 +29,72 @@ function App() {
   const [systemPrompts, setSystemPrompts] = useState<SystemPrompt[]>([]);
   const [loadingSystemPrompts, setLoadingSystemPrompts] = useState(false);
   const [activeSystemPrompt, setActiveSystemPrompt] = useState<number | null>(null);
+  
+  // Activity tracking state
+  const [activityState, setActivityState] = useState<ActivityState>({
+    global: {
+      messages: {
+        [MessageRole.user]: 0,
+        [MessageRole.assistant]: 0,
+        [MessageRole.system]: 0,
+        [MessageRole.tool]: 0
+      },
+      llmConfigChanges: 0,
+      total: 0
+    },
+    threadSpecific: {}
+  });
+
+  // Function to increment activity counters
+  const incrementActivityCounters = useCallback((chatId: number, type: 'message' | 'llmConfig', messageRole?: MessageRole) => {
+    setActivityState(prev => {
+      // Create new thread state if it doesn't exist
+      const threadState = prev.threadSpecific[chatId] || {
+        messages: {
+          [MessageRole.user]: 0,
+          [MessageRole.assistant]: 0,
+          [MessageRole.system]: 0,
+          [MessageRole.tool]: 0
+        },
+        llmConfigChanges: 0
+      };
+
+      // Create new state with deep copies
+      const newState = {
+        global: {
+          messages: { ...prev.global.messages },
+          llmConfigChanges: prev.global.llmConfigChanges,
+          total: prev.global.total
+        },
+        threadSpecific: {
+          ...prev.threadSpecific,
+          [chatId]: {
+            messages: { ...threadState.messages },
+            llmConfigChanges: threadState.llmConfigChanges
+          }
+        }
+      };
+
+      // Update counters based on type
+      if (type === 'message' && messageRole) {
+        newState.global.messages[messageRole]++;
+        newState.threadSpecific[chatId].messages[messageRole]++;
+      } else if (type === 'llmConfig') {
+        newState.global.llmConfigChanges++;
+        newState.threadSpecific[chatId].llmConfigChanges++;
+      }
+
+      // Update total
+      newState.global.total++;
+
+      console.log('Activity tracking - State update:', {
+        old: prev.global.messages,
+        new: newState.global.messages
+      });
+
+      return newState;
+    });
+  }, []);
 
   // Generate chat title from first message
   const generateChatTitle = useCallback((chat: Chat): string => {
@@ -354,17 +421,33 @@ function App() {
       // Send message and get fresh chat data
       const updatedChat = await chatApi.sendMessage(chatId, content);
 
+      // Get the new messages by comparing lengths
+      const oldMessages = chatState.messages || [];
+      const newMessages = updatedChat.history || [];
+      
+      console.log('Activity tracking - Old messages:', oldMessages.length, 'New messages:', newMessages.length);
+      
+      // Find new messages and increment counters for each
+      const newMsgs = newMessages.slice(oldMessages.length);
+      console.log('Activity tracking - New messages to process:', newMsgs);
+      
+      newMsgs.forEach(msg => {
+        console.log('Activity tracking - Incrementing counter for role:', msg.role);
+        incrementActivityCounters(chatId, 'message', msg.role);
+      });
+
       setOpenChats(prev => ({
         ...prev,
         [activeTabId]: {
           ...prev[activeTabId],
           chat: updatedChat,
-          messages: updatedChat.history || [],
+          messages: newMessages,
           isLoading: false,
           previewMessage: undefined,
           error: undefined
         }
       }));
+      
     } catch (error) {
       console.error('Failed to send message:', error);
       setOpenChats(prev => ({
@@ -536,6 +619,7 @@ function App() {
           activeTool={activeTool}
           activeSystemPrompt={activeSystemPrompt}
           chatState={activeTabId ? openChats[activeTabId] : undefined}
+          activityState={activityState}
         />
 
         {/* Global Error Display */}

@@ -282,7 +282,7 @@ export interface RightPanelProps {
   onCreateTool: (tool: ToolCreate) => Promise<void>;
   onAssignTool: (toolId: number) => Promise<void>;
   onDeleteTool: (toolId: number) => Promise<void>;
-  onUpdateTool: (toolId: number, tool: ToolCreate) => Promise<void>;
+  onUpdateTool: (toolId: number, tool: Partial<ToolCreate>) => Promise<void>;
   onRefreshTools: () => Promise<void>;
   onAssignSystemPrompt: (promptId: number) => Promise<void>;
   onDeleteSystemPrompt: (promptId: number) => Promise<void>;
@@ -291,6 +291,7 @@ export interface RightPanelProps {
   activeTool: number | null;
   activeSystemPrompt: number | null;
   chatState?: ChatState;
+  activityState: ActivityState;
 }
 
 export interface CopyButtonProps {
@@ -313,6 +314,34 @@ export interface ErrorDisplayProps {
 
 export interface UserPreviewMessageProps {
   content: string;
+}
+
+// Activity tracking interfaces
+export interface ThreadActivityCounters {
+  messages: {
+    [MessageRole.user]: number;
+    [MessageRole.assistant]: number;
+    [MessageRole.system]: number;
+    [MessageRole.tool]: number;
+  };
+  llmConfigChanges: number;
+}
+
+export interface GlobalActivityCounters {
+  messages: {
+    [MessageRole.user]: number;
+    [MessageRole.assistant]: number;
+    [MessageRole.system]: number;
+    [MessageRole.tool]: number;
+  };
+  llmConfigChanges: number;
+  total: number;
+}
+
+export interface ActivityState {
+  global: GlobalActivityCounters;
+  // Indexed by chat ID (from database)
+  threadSpecific: Record<number, ThreadActivityCounters>;
 }
 
 // Theme types
