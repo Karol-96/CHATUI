@@ -599,6 +599,7 @@ function App() {
             activeTool={activeTool}
             activeSystemPrompt={activeSystemPrompt}
             onTmuxModeToggle={() => setIsTmuxMode(!isTmuxMode)}
+            onLLMConfigUpdate={(chatId: number) => incrementActivityCounters(chatId, 'llmConfig')}
           />
         </div>
 

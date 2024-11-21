@@ -20,6 +20,7 @@ interface CentralWindowProps {
   activeTool?: number | null;
   activeSystemPrompt?: number | null;
   onTmuxModeToggle: () => void;
+  onLLMConfigUpdate: (chatId: number) => void;
 }
 
 export const CentralWindow: React.FC<CentralWindowProps> = ({
@@ -37,6 +38,7 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
   activeTool,
   activeSystemPrompt,
   onTmuxModeToggle,
+  onLLMConfigUpdate,
 }) => {
   if (!activeTabId && !isTmuxMode) return null;
 
@@ -87,11 +89,16 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
             openChats={openChats}
             tabOrder={tabOrder}
             activeTabId={activeTabId}
+            onSendMessage={onSendMessage}
             onTabSelect={onTabSelect}
             onTabClose={onTabClose}
             onAfterDelete={onAfterDelete}
             onAfterClear={onAfterClear}
-            {...commonProps}
+            tools={tools}
+            systemPrompts={systemPrompts}
+            activeTool={activeTool}
+            activeSystemPrompt={activeSystemPrompt}
+            onLLMConfigUpdate={onLLMConfigUpdate}
           />
         ) : (
           activeTabId && (
@@ -109,6 +116,7 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
                     getToolName(tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id))
                     : undefined}
                   isTmux={isTmuxMode}
+                  onLLMConfigUpdate={() => onLLMConfigUpdate(parseInt(activeTabId, 10))}
                 />
               </div>
               <div className="flex-1 min-h-0">

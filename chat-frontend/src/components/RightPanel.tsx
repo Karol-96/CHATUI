@@ -29,17 +29,18 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   const [activePanel, setActivePanel] = React.useState<'tools' | 'system'>('system');
   const [currentConfig, setCurrentConfig] = useState<LLMConfig>();
 
-  // Calculate total message count across all roles (excluding llmConfig)
-  const totalMessageCount = useMemo(() => {
+  // Calculate total activity (messages + config changes)
+  const totalActivity = useMemo(() => {
     const globalMessages = activityState.global.messages;
-    const total = Object.values(globalMessages).reduce((sum, count) => sum + count, 0);
-    console.log('RightPanel - Total message count:', total, 'Global messages:', globalMessages);
-    return total;
-  }, [activityState.global.messages]);
+    const messageCount = Object.values(globalMessages).reduce((sum, count) => sum + count, 0);
+    const configChanges = activityState.global.llmConfigChanges;
+    console.log('RightPanel - Activity counts:', { messages: messageCount, configChanges });
+    return messageCount + configChanges;
+  }, [activityState.global.messages, activityState.global.llmConfigChanges]);
 
-  // Update on any message changes
+  // Update on any activity changes
   useEffect(() => {
-    console.log('RightPanel - Effect triggered. Total messages:', totalMessageCount);
+    console.log('RightPanel - Effect triggered. Total activity:', totalActivity);
     const fetchConfigAndTools = async () => {
       if (activeChatId) {
         try {
@@ -57,7 +58,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
     fetchConfigAndTools();
   }, [
     activeChatId,
-    totalMessageCount,
+    totalActivity,
     onRefreshTools,
     onRefreshSystemPrompts
   ]);

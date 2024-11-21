@@ -13,6 +13,7 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   systemPromptName,
   toolName,
   isTmux = false,
+  onLLMConfigUpdate,
 }) => {
   const [isConfigMenuOpen, setIsConfigMenuOpen] = useState(false);
   const [currentConfig, setCurrentConfig] = useState<LLMConfig | undefined>(undefined);
@@ -77,6 +78,7 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
       await chatApi.updateLLMConfig(chatId, config);
       await fetchConfig(); // Refetch config after update
       setIsConfigMenuOpen(false);
+      onLLMConfigUpdate?.(); // Call the callback if provided
     } catch (error) {
       console.error('Error updating LLM config:', error);
     }

@@ -179,10 +179,11 @@ export interface ChatControlBarProps {
   onAfterDelete: () => void;
   onAfterClear: () => void;
   onClose?: () => void;
-  onNameUpdate?: () => void;
+  onNameUpdate: () => void;
   systemPromptName?: string;
   toolName?: string;
   isTmux?: boolean;
+  onLLMConfigUpdate?: () => void;
 }
 
 export interface ChatWindowProps {
@@ -261,6 +262,7 @@ export interface TmuxLayoutProps {
   systemPrompts: SystemPrompt[];
   activeTool?: number | null;
   activeSystemPrompt?: number | null;
+  onLLMConfigUpdate: (chatId: number) => void;
 }
 
 export interface ValidationErrors {

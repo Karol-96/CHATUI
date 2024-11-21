@@ -16,6 +16,7 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
   systemPrompts,
   activeTool,
   activeSystemPrompt,
+  onLLMConfigUpdate,
 }) => {
   // Handle tab key navigation
   useEffect(() => {
@@ -126,6 +127,7 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
                     getToolName(tools.find(t => t.id === chatState.chat.active_tool_id))
                     : undefined}
                   isTmux={true}
+                  onLLMConfigUpdate={() => onLLMConfigUpdate(chatId)}
                 />
               </div>
               <div className="flex-1 min-h-0">
