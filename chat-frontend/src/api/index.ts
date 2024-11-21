@@ -27,7 +27,7 @@ const isAxiosError = (error: unknown): error is AxiosErrorLike => {
   );
 };
 
-const TIMEOUT = 30000; // 30 seconds
+const TIMEOUT = 120000; // 2 minutes
 const MAX_RETRIES = 3;
 const BASE_DELAY = 1000; // 1 second
 
@@ -36,12 +36,18 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: TIMEOUT
+  timeout: TIMEOUT,
+  responseType: 'json',
+  validateStatus: (status) => status < 500 // Only reject if server error
 });
 
-// Add request interceptor for debugging
+// Add request interceptor for debugging and timeout handling
 api.interceptors.request.use(
   config => {
+    // Extend timeout for specific requests if needed
+    if (config.url?.includes('/messages/')) {
+      config.timeout = TIMEOUT * 2; // Double timeout for message requests
+    }
     console.log('Request:', {
       url: config.url,
       method: config.method,
