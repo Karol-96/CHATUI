@@ -184,6 +184,7 @@ export interface ChatControlBarProps {
   toolName?: string;
   isTmux?: boolean;
   onLLMConfigUpdate?: () => void;
+  columnCount?: 1 | 2 | 3;
 }
 
 export interface ChatWindowProps {
