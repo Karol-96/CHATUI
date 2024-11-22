@@ -1,5 +1,5 @@
 // src/components/AutoToolsPanel.tsx
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Plus, Settings, Trash2, Eye, EyeOff, Edit2, RefreshCw, CheckCircle } from 'lucide-react';
 import { tokens } from '../styles/tokens';
 import { Tool, ToolCreate, TypedToolCreate, CallableToolCreate } from '../types';
@@ -53,6 +53,11 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
 
   // Local state to simulate assigning/unassigning tools
   const [autoToolsIdsState, setAutoToolsIdsState] = useState<number[]>(autoToolsIds);
+
+  // Update local state whenever autoToolsIds changes
+  useEffect(() => {
+    setAutoToolsIdsState(autoToolsIds);
+  }, [autoToolsIds]);
 
   const handleEdit = useCallback((tool: Tool) => {
     setEditingTool(tool.id);
