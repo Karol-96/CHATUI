@@ -11,7 +11,7 @@ interface AutoToolsPanelProps {
   onDeleteTool: (toolId: number) => Promise<void>;
   onUpdateTool: (toolId: number, tool: Partial<ToolCreate>) => Promise<void>;
   onRefreshTools: () => Promise<void>;
-  onUpdateAutoTools: (toolIds: number[]) => Promise<void>;
+  onUpdateAutoTools: (toolIds: { tool_ids: number[] }) => Promise<void>;
   loading: boolean;
   autoToolsIds: number[];
 }
@@ -88,7 +88,7 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
           ? autoToolsIds.filter((id) => id !== toolId)
           : [...autoToolsIds, toolId];
 
-        await onUpdateAutoTools(newAutoToolsIds);
+        await onUpdateAutoTools({ tool_ids: newAutoToolsIds });
       } catch (error) {
         console.error('Failed to update auto tools:', error);
       }

@@ -313,7 +313,7 @@ export const chatApi = {
 
   updateChatAutoTools: async (chatId: number, toolIds: number[]): Promise<Chat> => {
     try {
-      const { data } = await chatapi.put<ChatResponse>(`/${chatId}/auto-tools`, { tool_ids: toolIds });
+      const { data } = await chatapi.put<ChatResponse>(`/${chatId}/auto-tools`, toolIds);
       return data;
     } catch (error) {
       throw handleApiError(error);

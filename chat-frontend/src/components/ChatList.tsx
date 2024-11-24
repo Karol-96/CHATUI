@@ -13,6 +13,7 @@ const ChatList: React.FC<ChatListProps> = ({
   onDeleteChat
 }) => {
   const getMessagePreview = (chat: Chat): string => {
+    if (!chat.history) return 'New Chat';
     const lastMessage = chat.history[chat.history.length - 1];
     if (!lastMessage) return 'New Chat';
     const preview = lastMessage.content.slice(0, 50);

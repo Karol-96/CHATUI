@@ -79,10 +79,10 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             onUpdateTool(toolId, tool as ToolCreate)
           }
           onRefreshTools={onRefreshTools}
-          onUpdateAutoTools={async (toolIds: number[]) => {
+          onUpdateAutoTools={async ({ tool_ids }) => {
             if (!activeChatId) return;
             try {
-              await onUpdateAutoTools(activeChatId, toolIds);
+              await onUpdateAutoTools(activeChatId, tool_ids.map(Number));
               onRefreshTools();
             } catch (error) {
               console.error('Failed to update auto tools:', error);
