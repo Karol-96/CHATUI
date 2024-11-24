@@ -29,7 +29,7 @@ const isAxiosError = (error: unknown): error is AxiosErrorLike => {
 
 const TIMEOUT = 120000; // 2 minutes
 
-const api = axios.create({
+const chatapi = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/v1/chats',
   headers: {
     'Content-Type': 'application/json'
@@ -40,7 +40,7 @@ const api = axios.create({
 });
 
 // Add request interceptor for debugging and timeout handling
-api.interceptors.request.use(
+chatapi.interceptors.request.use(
   config => {
     // Extend timeout for specific requests if needed
     if (config.url?.includes('/messages/')) {
@@ -60,7 +60,7 @@ api.interceptors.request.use(
 );
 
 // Add response interceptor for debugging
-api.interceptors.response.use(
+chatapi.interceptors.response.use(
   response => {
     console.log('Response:', {
       status: response.status,
@@ -97,7 +97,7 @@ const handleApiError = (error: unknown): never => {
 export const chatApi = {
   listChats: async (): Promise<Chat[]> => {
     try {
-      const { data } = await api.get<Chat[]>('/');
+      const { data } = await chatapi.get<Chat[]>('/');
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -106,7 +106,7 @@ export const chatApi = {
 
   getChat: async (chatId: number): Promise<Chat> => {
     try {
-      const { data } = await api.get<ChatResponse>(`/${chatId}`);
+      const { data } = await chatapi.get<ChatResponse>(`/${chatId}`);
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -115,7 +115,7 @@ export const chatApi = {
 
   createChat: async (): Promise<Chat> => {
     try {
-      const { data } = await api.post<ChatResponse>('/');
+      const { data } = await chatapi.post<ChatResponse>('/');
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -124,7 +124,7 @@ export const chatApi = {
 
   sendMessage: async (chatId: number, content: string): Promise<Chat> => {
     try {
-      const { data } = await api.post<ChatResponse>(
+      const { data } = await chatapi.post<ChatResponse>(
         `/${chatId}/messages/`,
         { content }
       );
@@ -136,7 +136,7 @@ export const chatApi = {
 
   clearHistory: async (chatId: number): Promise<Chat> => {
     try {
-      const { data } = await api.post<ChatResponse>(`/${chatId}/clear`);
+      const { data } = await chatapi.post<ChatResponse>(`/${chatId}/clear`);
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -145,7 +145,7 @@ export const chatApi = {
 
   deleteChat: async (chatId: number): Promise<void> => {
     try {
-      await api.delete(`/${chatId}`);
+      await chatapi.delete(`/${chatId}`);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -153,7 +153,7 @@ export const chatApi = {
 
   updateChatName: async (chatId: number, name: string): Promise<Chat> => {
     try {
-      const { data } = await api.put<Chat>(`/${chatId}/name`, { name });
+      const { data } = await chatapi.put<Chat>(`/${chatId}/name`, { name });
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -165,8 +165,8 @@ export const chatApi = {
     try {
       // Fetch both regular and callable tools
       const [{ data: typedTools }, { data: callableTools }] = await Promise.all([
-        api.get<TypedTool[]>('/tools/'),
-        api.get<CallableTool[]>('/callable-tools/')
+        chatapi.get<TypedTool[]>('/tools/'),
+        chatapi.get<CallableTool[]>('/callable-tools/')
       ]);
       
       // Ensure proper typing for both tool types
@@ -191,7 +191,7 @@ export const chatApi = {
     try {
       if ('is_callable' in tool && tool.is_callable) {
         const { name, description, input_schema, output_schema } = tool;
-        const { data } = await api.post<CallableTool>('/callable-tools/', {
+        const { data } = await chatapi.post<CallableTool>('/callable-tools/', {
           name,
           description,
           input_schema,
@@ -202,7 +202,7 @@ export const chatApi = {
           is_callable: true as const
         };
       } else {
-        const { data } = await api.post<TypedTool>('/tools/', tool);
+        const { data } = await chatapi.post<TypedTool>('/tools/', tool);
         return {
           ...data,
           is_callable: false as const
@@ -217,7 +217,7 @@ export const chatApi = {
     try {
       if ('is_callable' in tool && tool.is_callable) {
         const { name, description, input_schema, output_schema } = tool;
-        const { data } = await api.patch<CallableTool>(`/callable-tools/${toolId}`, {
+        const { data } = await chatapi.patch<CallableTool>(`/callable-tools/${toolId}`, {
           name,
           description,
           input_schema,
@@ -228,7 +228,7 @@ export const chatApi = {
           is_callable: true as const
         };
       } else {
-        const { data } = await api.patch<TypedTool>(`/tools/${toolId}`, tool);
+        const { data } = await chatapi.patch<TypedTool>(`/tools/${toolId}`, tool);
         return {
           ...data,
           is_callable: false as const
@@ -242,7 +242,7 @@ export const chatApi = {
   deleteTool: async (toolId: number, isCallable: boolean): Promise<void> => {
     try {
       const endpoint = isCallable ? `/callable-tools/${toolId}` : `/tools/${toolId}`;
-      await api.delete(endpoint);
+      await chatapi.delete(endpoint);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -250,7 +250,7 @@ export const chatApi = {
 
   assignToolToChat: async (chatId: number, toolId: number, isCallable: boolean): Promise<Chat> => {
     try {
-      const { data } = await api.put<Chat>(`/${chatId}/tool/${toolId}`);
+      const { data } = await chatapi.put<Chat>(`/${chatId}/tool/${toolId}`);
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -260,7 +260,7 @@ export const chatApi = {
   // System prompt methods
   listSystemPrompts: async (): Promise<SystemPrompt[]> => {
     try {
-      const { data } = await api.get<SystemPrompt[]>('/system-prompts/');
+      const { data } = await chatapi.get<SystemPrompt[]>('/system-prompts/');
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -269,7 +269,7 @@ export const chatApi = {
 
   createSystemPrompt: async (prompt: SystemPromptCreate): Promise<SystemPrompt> => {
     try {
-      const { data } = await api.post<SystemPrompt>('/system-prompts/', prompt);
+      const { data } = await chatapi.post<SystemPrompt>('/system-prompts/', prompt);
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -278,7 +278,7 @@ export const chatApi = {
 
   assignSystemPromptToChat: async (chatId: number, promptId: number): Promise<Chat> => {
     try {
-      const { data } = await api.put<Chat>(`/${chatId}/system-prompt/by-id/${promptId}`);
+      const { data } = await chatapi.put<Chat>(`/${chatId}/system-prompt/by-id/${promptId}`);
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -287,7 +287,7 @@ export const chatApi = {
 
   deleteSystemPrompt: async (promptId: number): Promise<void> => {
     try {
-      await api.delete(`/system-prompts/${promptId}`);
+      await chatapi.delete(`/system-prompts/${promptId}`);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -295,7 +295,7 @@ export const chatApi = {
 
   updateLLMConfig: async (chatId: number, config: LLMConfigUpdate): Promise<Chat> => {
     try {
-      const response = await api.put<Chat>(`/${chatId}/llm-config`, config);
+      const response = await chatapi.put<Chat>(`/${chatId}/llm-config`, config);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
@@ -304,7 +304,7 @@ export const chatApi = {
 
   getLLMConfig: async (chatId: number): Promise<LLMConfig> => {
     try {
-      const { data } = await api.get<LLMConfig>(`/${chatId}/llm-config`);
+      const { data } = await chatapi.get<LLMConfig>(`/${chatId}/llm-config`);
       return data;
     } catch (error) {
       throw handleApiError(error);
@@ -313,7 +313,17 @@ export const chatApi = {
 
   updateChatAutoTools: async (chatId: number, toolIds: number[]): Promise<Chat> => {
     try {
-      const { data } = await api.put<ChatResponse>(`/${chatId}/auto-tools`, toolIds);
+      const { data } = await chatapi.put<ChatResponse>(`/${chatId}/auto-tools`, { tool_ids: toolIds });
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  // Trigger assistant response without user message
+  triggerAssistantResponse: async (chatId: number): Promise<Chat> => {
+    try {
+      const { data } = await chatapi.post<ChatResponse>(`/${chatId}/assistant-response`);
       return data;
     } catch (error) {
       throw handleApiError(error);

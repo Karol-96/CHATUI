@@ -1,16 +1,13 @@
 // src/App.tsx
 
 import './index.css';
-import { tokens } from './styles/tokens';
-
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import type { Chat, ChatMessage, ChatState, Tool, ToolCreate, SystemPrompt, ActivityState } from './types/index';
+import type { Chat, ChatState, Tool, ToolCreate, SystemPrompt, ActivityState } from './types/index';
 import { MessageRole } from './types/index';
 import ChatList from './components/ChatList';
 import { RightPanel } from './components/RightPanel';
 import { CentralWindow } from './components/CentralWindow';
 import { chatApi } from './api';
-import { Layout, LayoutGrid } from 'lucide-react';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { ThemeProvider } from './contexts/ThemeContext';
 
@@ -400,7 +397,7 @@ function App() {
     }
   }, [loadSystemPrompts]);
 
-  const sendMessageAsync = useCallback(async (content: string) => {
+  const sendMessageAsync = useCallback(async (content: string, triggerAssistant: boolean = false) => {
     if (!activeTabId) return;
     const chatState = openChats[activeTabId];
     if (!chatState) return;
@@ -412,14 +409,16 @@ function App() {
       [activeTabId]: {
         ...prev[activeTabId],
         isLoading: true,
-        previewMessage: content,
+        previewMessage: triggerAssistant ? undefined : content,
         error: undefined,
       }
     }));
 
     try {
-      // Send message and get fresh chat data
-      const updatedChat = await chatApi.sendMessage(chatId, content);
+      // Use triggerAssistantResponse when triggered by Ctrl+Enter/button, otherwise use sendMessage
+      const updatedChat = triggerAssistant 
+        ? await chatApi.triggerAssistantResponse(chatId)
+        : await chatApi.sendMessage(chatId, content);
 
       // Get the new messages by comparing lengths
       const oldMessages = chatState.messages || [];

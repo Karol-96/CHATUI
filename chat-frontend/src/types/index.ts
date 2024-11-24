@@ -169,7 +169,8 @@ export interface ChatMessageProps {
 }
 
 export interface ChatInputProps {
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, triggerAssistant?: boolean) => void;
+  onTriggerAssistant?: () => void;
   disabled?: boolean;
   autoFocus?: boolean;
 }
@@ -189,7 +190,7 @@ export interface ChatControlBarProps {
 
 export interface ChatWindowProps {
   messages: ChatMessage[];
-  onSendMessage: (message: string) => Promise<void>;
+  onSendMessage: (message: string, triggerAssistant?: boolean) => Promise<void>;
   error?: string;
   isLoading?: boolean;
   previewMessage?: string;
