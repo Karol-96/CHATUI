@@ -308,10 +308,19 @@ export const chatApi = {
 
   getLLMConfig: async (chatId: number): Promise<LLMConfig> => {
     try {
-      const response = await api.get<LLMConfig>(`/${chatId}/llm-config`);
-      return response.data;
+      const { data } = await api.get<LLMConfig>(`/${chatId}/llm-config`);
+      return data;
     } catch (error) {
       throw handleApiError(error);
     }
   },
+
+  updateChatAutoTools: async (chatId: number, toolIds: number[]): Promise<Chat> => {
+    try {
+      const { data } = await api.put<ChatResponse>(`/${chatId}/auto-tools`, toolIds);
+      return data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
 };

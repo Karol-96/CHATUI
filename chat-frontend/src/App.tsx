@@ -491,12 +491,29 @@ function App() {
       const updatedChat = await chatApi.clearHistory(chatId);
       const tabId = chatId.toString();
       
+      // Update open chats state
       setOpenChats(prev => ({
         ...prev,
         [tabId]: {
           ...prev[tabId],
           chat: updatedChat,
-          messages: updatedChat.history || [],
+          messages: [], // Immediately clear messages
+        }
+      }));
+
+      // Update global chat list
+      setChats(prev => prev.map(chat => 
+        chat.id === chatId ? updatedChat : chat
+      ));
+
+      // Force refresh the chat state
+      const refreshedChat = await chatApi.getChat(chatId);
+      setOpenChats(prev => ({
+        ...prev,
+        [tabId]: {
+          ...prev[tabId],
+          chat: refreshedChat,
+          messages: refreshedChat.history || [],
         }
       }));
     } catch (error) {
@@ -513,6 +530,33 @@ function App() {
       return newOrder;
     });
   }, []);
+
+  const handleUpdateAutoTools = useCallback(async (chatId: number, toolIds: number[]) => {
+    try {
+      const updatedChat = await chatApi.updateChatAutoTools(chatId, toolIds);
+      
+      // Update global chat list
+      setChats(prev => prev.map(chat => 
+        chat.id === chatId ? updatedChat : chat
+      ));
+      
+      // Update open chat if it exists
+      const tabId = chatId.toString();
+      if (openChats[tabId]) {
+        setOpenChats(prev => ({
+          ...prev,
+          [tabId]: {
+            ...prev[tabId],
+            chat: updatedChat,
+            messages: updatedChat.history || []
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to update auto tools:', error);
+      setError(error instanceof Error ? error.message : 'Failed to update auto tools');
+    }
+  }, [openChats]);
 
   // Get sorted chats based on tab order (only for open tabs)
   const sortedOpenChats = useMemo(() => {
@@ -621,6 +665,7 @@ function App() {
           activeSystemPrompt={activeSystemPrompt}
           chatState={activeTabId ? openChats[activeTabId] : undefined}
           activityState={activityState}
+          onUpdateAutoTools={handleUpdateAutoTools}
         />
 
         {/* Global Error Display */}

@@ -1,5 +1,5 @@
 // src/components/AutoToolsPanel.tsx
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Plus, Settings, Trash2, Eye, EyeOff, Edit2, RefreshCw, CheckCircle } from 'lucide-react';
 import { tokens } from '../styles/tokens';
 import { Tool, ToolCreate, TypedToolCreate, CallableToolCreate } from '../types';
@@ -11,8 +11,9 @@ interface AutoToolsPanelProps {
   onDeleteTool: (toolId: number) => Promise<void>;
   onUpdateTool: (toolId: number, tool: Partial<ToolCreate>) => Promise<void>;
   onRefreshTools: () => Promise<void>;
+  onUpdateAutoTools: (toolIds: number[]) => Promise<void>;
   loading: boolean;
-  autoToolsIds: number[]; // Include autoToolsIds to track active tools
+  autoToolsIds: number[];
 }
 
 const validateToolName = (name: string): boolean => {
@@ -34,8 +35,9 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
   onDeleteTool,
   onUpdateTool,
   onRefreshTools,
+  onUpdateAutoTools,
   loading,
-  autoToolsIds, // Destructure autoToolsIds
+  autoToolsIds,
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showToolDetails, setShowToolDetails] = useState<number | null>(null);
@@ -50,14 +52,6 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
   });
   const [isCallable, setIsCallable] = useState(false);
   const [jsonSchemaInput, setJsonSchemaInput] = useState<string>('');
-
-  // Local state to simulate assigning/unassigning tools
-  const [autoToolsIdsState, setAutoToolsIdsState] = useState<number[]>(autoToolsIds);
-
-  // Update local state whenever autoToolsIds changes
-  useEffect(() => {
-    setAutoToolsIdsState(autoToolsIds);
-  }, [autoToolsIds]);
 
   const handleEdit = useCallback((tool: Tool) => {
     setEditingTool(tool.id);
@@ -87,21 +81,19 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
 
   const handleAssign = useCallback(
     async (toolId: number) => {
-      // Temporarily disconnect the API call on assign
-      // You can uncomment the following lines when you're ready to handle the API calls
-      // if (loading) return;
-      // await onAssignTool(toolId);
+      if (loading || !selectedChatId) return;
 
-      // For now, we'll simulate the assign/unassign logic locally
-      if (autoToolsIdsState.includes(toolId)) {
-        // Remove the tool from autoToolsIdsState (unassign)
-        setAutoToolsIdsState(autoToolsIdsState.filter((id) => id !== toolId));
-      } else {
-        // Add the tool to autoToolsIdsState (assign)
-        setAutoToolsIdsState([...autoToolsIdsState, toolId]);
+      try {
+        const newAutoToolsIds = autoToolsIds.includes(toolId)
+          ? autoToolsIds.filter((id) => id !== toolId)
+          : [...autoToolsIds, toolId];
+
+        await onUpdateAutoTools(newAutoToolsIds);
+      } catch (error) {
+        console.error('Failed to update auto tools:', error);
       }
     },
-    [autoToolsIdsState]
+    [loading, selectedChatId, autoToolsIds, onUpdateAutoTools]
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -200,7 +192,7 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
   };
 
   const renderToolItem = (tool: Tool) => {
-    const isActive = autoToolsIdsState.includes(tool.id); // Multiple active tools
+    const isActive = autoToolsIds.includes(tool.id); // Multiple active tools
     const isShowingDetails = showToolDetails === tool.id;
 
     return (
@@ -258,23 +250,28 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
         <div className="mt-2 flex gap-2">
           {selectedChatId && (
             <button
-              onClick={() => handleAssign(tool.id)}
+              onClick={() => !loading && handleAssign(tool.id)}
               disabled={loading}
               className={`text-sm px-2 py-1 rounded flex items-center gap-1 transition-colors duration-200 ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              } ${
                 isActive
-                  ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
                   : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
               }`}
+              title={isActive ? 'Remove from auto tools' : 'Add to auto tools'}
             >
-              {isActive ? (
+              {loading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : isActive ? (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  Assigned
+                  Remove
                 </>
               ) : (
                 <>
                   <Settings className="w-4 h-4" />
-                  Assign
+                  Add
                 </>
               )}
             </button>

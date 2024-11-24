@@ -25,6 +25,7 @@ export const RightPanel: React.FC<RightPanelProps> = ({
   activeSystemPrompt,
   chatState,
   activityState,
+  onUpdateAutoTools,
 }) => {
   const [activePanel, setActivePanel] = React.useState<'tools' | 'system'>('system');
   const [currentConfig, setCurrentConfig] = useState<LLMConfig>();
@@ -78,6 +79,15 @@ export const RightPanel: React.FC<RightPanelProps> = ({
             onUpdateTool(toolId, tool as ToolCreate)
           }
           onRefreshTools={onRefreshTools}
+          onUpdateAutoTools={async (toolIds: number[]) => {
+            if (!activeChatId) return;
+            try {
+              await onUpdateAutoTools(activeChatId, toolIds);
+              onRefreshTools();
+            } catch (error) {
+              console.error('Failed to update auto tools:', error);
+            }
+          }}
           loading={loading}
           autoToolsIds={chatState?.chat.auto_tools_ids || []}
         />

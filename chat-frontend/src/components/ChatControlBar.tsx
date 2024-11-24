@@ -341,6 +341,13 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
 
       <div className="flex items-center space-x-2">
         <button
+          onClick={handleClearHistory}
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded"
+          title="Clear History"
+        >
+          <Eraser size={getIconSize()} />
+        </button>
+        <button
           onClick={onClose}
           className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded"
         >

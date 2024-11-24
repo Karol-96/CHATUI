@@ -290,6 +290,7 @@ export interface RightPanelProps {
   onAssignSystemPrompt: (promptId: number) => Promise<void>;
   onDeleteSystemPrompt: (promptId: number) => Promise<void>;
   onRefreshSystemPrompts: () => Promise<void>;
+  onUpdateAutoTools: (chatId: number, toolIds: number[]) => Promise<void>;
   loading: boolean;
   activeTool: number | null;
   activeSystemPrompt: number | null;
