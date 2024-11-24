@@ -525,8 +525,8 @@ function App() {
   const handleTabReorder = useCallback((fromIndex: number, toIndex: number) => {
     setTabOrder(prev => {
       const newOrder = [...prev];
-      const [movedItem] = newOrder.splice(fromIndex, 1);
-      newOrder.splice(toIndex, 0, movedItem);
+      // Simple swap of elements
+      [newOrder[fromIndex], newOrder[toIndex]] = [newOrder[toIndex], newOrder[fromIndex]];
       return newOrder;
     });
   }, []);
@@ -644,6 +644,7 @@ function App() {
             activeSystemPrompt={activeSystemPrompt}
             onTmuxModeToggle={() => setIsTmuxMode(!isTmuxMode)}
             onLLMConfigUpdate={(chatId: number) => incrementActivityCounters(chatId, 'llmConfig')}
+            onTabReorder={handleTabReorder}
           />
         </div>
 

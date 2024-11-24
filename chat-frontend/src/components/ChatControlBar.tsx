@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Trash2, X, Eraser, Wand2, Wrench, Settings, Edit2, MessageSquare, Bot } from 'lucide-react';
+import { Trash2, X, Eraser, Wand2, Wrench, Settings, Edit2, MessageSquare, Bot } from 'lucide-react';
 import { ChatControlBarProps, LLMConfig, LLMConfigUpdate, ResponseFormat } from '../types';
 import { chatApi } from '../api';
 import { LLMConfigMenu } from './LLMConfigMenu';
@@ -42,22 +42,14 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
 
   // Helper function to get truncation length based on column count
   const getTruncateLength = () => {
-    if (!isTmux) return 30;
     switch (columnCount) {
+      case 2:
+        return 20;
       case 3:
         return 15;
-      case 2:
-        return 25;
       default:
         return 30;
     }
-  };
-
-  const truncateString = (str: string | undefined) => {
-    if (!str) return '';
-    const maxLength = getTruncateLength();
-    if (str.length <= maxLength) return str;
-    return str.slice(0, maxLength - 2) + '..';
   };
 
   const fetchConfig = useCallback(async () => {

@@ -28,8 +28,6 @@ const isAxiosError = (error: unknown): error is AxiosErrorLike => {
 };
 
 const TIMEOUT = 120000; // 2 minutes
-const MAX_RETRIES = 3;
-const BASE_DELAY = 1000; // 1 second
 
 const api = axios.create({
   baseURL: 'http://127.0.0.1:8000/api/v1/chats',
@@ -84,8 +82,6 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const handleApiError = (error: unknown): never => {
   if (isAxiosError(error)) {

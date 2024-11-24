@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { ChatWindow } from './ChatWindow';
 import { ChatControlBar } from './ChatControlBar';
-import { ChatState, Tool, SystemPrompt, TmuxLayoutProps, ResponseFormat } from '../types';
+import { Tool, TmuxLayoutProps } from '../types';
 
 export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
   openChats,
@@ -17,6 +17,7 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
   activeTool,
   activeSystemPrompt,
   onLLMConfigUpdate,
+  onTabReorder,
 }) => {
   // Handle tab key navigation
   useEffect(() => {
@@ -35,24 +36,6 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
 
   const chatCount = tabOrder.length;
   if (chatCount === 0) return null;
-
-  interface GridConfig {
-    columns: number;
-    rows: number;
-  }
-
-  function calculateOptimalGrid(chatCount: number): GridConfig {
-    // For 1-2 chats, keep current behavior
-    if (chatCount === 1) return { columns: 1, rows: 1 };
-    if (chatCount === 2) return { columns: 2, rows: 1 };
-    
-    // For 3+ chats, calculate optimal square-like grid
-    const sqrt = Math.sqrt(chatCount);
-    const cols = Math.ceil(sqrt);
-    const rows = Math.ceil(chatCount / cols);
-    
-    return { columns: cols, rows: rows };
-  }
 
   // Calculate grid layout based on number of chats
   const getGridLayout = () => {
@@ -118,14 +101,11 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
               <div className="flex-shrink-0" onClick={e => e.stopPropagation()}>
                 <ChatControlBar
                   chatId={chatId}
-                  onAfterDelete={() => onAfterDelete(tabId)}
+                  onAfterDelete={() => onAfterDelete(tabId.toString())}
                   onAfterClear={onAfterClear}
-                  onClose={() => onTabClose(tabId)}
                   onNameUpdate={onAfterClear}
                   systemPromptName={chatState.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === chatState.chat.system_prompt_id)?.name : undefined}
-                  toolName={chatState.chat.active_tool_id ? 
-                    getToolName(tools.find(t => t.id === chatState.chat.active_tool_id))
-                    : undefined}
+                  toolName={chatState.chat.active_tool_id ? getToolName(tools.find(t => t.id === chatState.chat.active_tool_id)) : undefined}
                   isTmux={true}
                   onLLMConfigUpdate={() => onLLMConfigUpdate(chatId)}
                   columnCount={(chatCount <= 2 ? chatCount : 3) as 1 | 2 | 3}

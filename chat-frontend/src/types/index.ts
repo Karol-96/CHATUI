@@ -229,7 +229,7 @@ export interface TabBarProps {
   activeTabId: string | null;
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
-  onTabReorder?: (fromIndex: number, toIndex: number) => void;
+  onTabReorder: (fromIndex: number, toIndex: number) => void;
   isTmuxMode: boolean;
   onTmuxModeToggle: () => void;
 }
@@ -248,6 +248,9 @@ export interface CentralWindowProps {
   systemPrompts: SystemPrompt[];
   activeTool?: number | null;
   activeSystemPrompt?: number | null;
+  onTmuxModeToggle: () => void;
+  onLLMConfigUpdate: (chatId: number) => void;
+  onTabReorder: (fromIndex: number, toIndex: number) => void;
 }
 
 export interface TmuxLayoutProps {
@@ -264,6 +267,7 @@ export interface TmuxLayoutProps {
   activeTool?: number | null;
   activeSystemPrompt?: number | null;
   onLLMConfigUpdate: (chatId: number) => void;
+  onTabReorder: (fromIndex: number, toIndex: number) => void;
 }
 
 export interface ValidationErrors {

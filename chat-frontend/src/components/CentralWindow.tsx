@@ -3,7 +3,7 @@ import { ChatWindow } from './ChatWindow';
 import { TmuxLayout } from './TmuxLayout';
 import { TabBar } from './TabBar';
 import { ChatControlBar } from './ChatControlBar';
-import { ChatState, Tool, SystemPrompt, ResponseFormat } from '../types';
+import { ChatState, Tool, SystemPrompt } from '../types';
 
 interface CentralWindowProps {
   openChats: Record<string, ChatState>;
@@ -21,6 +21,7 @@ interface CentralWindowProps {
   activeSystemPrompt?: number | null;
   onTmuxModeToggle: () => void;
   onLLMConfigUpdate: (chatId: number) => void;
+  onTabReorder: (fromIndex: number, toIndex: number) => void;
 }
 
 export const CentralWindow: React.FC<CentralWindowProps> = ({
@@ -39,8 +40,13 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
   activeSystemPrompt,
   onTmuxModeToggle,
   onLLMConfigUpdate,
+  onTabReorder,
 }) => {
   if (!activeTabId && !isTmuxMode) return null;
+
+  const handleTabReorder = (fromIndex: number, toIndex: number) => {
+    onTabReorder(fromIndex, toIndex);
+  };
 
   const commonProps = {
     onSendMessage,
@@ -77,6 +83,7 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
           activeTabId={activeTabId}
           onTabSelect={onTabSelect}
           onTabClose={onTabClose}
+          onTabReorder={handleTabReorder}
           isTmuxMode={isTmuxMode}
           onTmuxModeToggle={onTmuxModeToggle}
         />
@@ -99,6 +106,7 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
             activeTool={activeTool}
             activeSystemPrompt={activeSystemPrompt}
             onLLMConfigUpdate={onLLMConfigUpdate}
+            onTabReorder={handleTabReorder}
           />
         ) : (
           activeTabId && (

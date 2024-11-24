@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { ToolPanel } from './ToolPanel';
 import { AutoToolsPanel } from './AutoToolsPanel';
 import { SystemPanel } from './SystemPanel';
-import { Tool, ToolCreate, SystemPrompt, RightPanelProps, LLMConfig } from '../types';
+import { ToolCreate, RightPanelProps, LLMConfig } from '../types';
 import { tokens } from '../styles/tokens';
 import { chatApi } from '../api';
 
