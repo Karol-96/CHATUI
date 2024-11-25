@@ -346,5 +346,17 @@ export const chatApi = {
     } catch (error) {
       throw handleApiError(error);
     }
-  }
+  },
+
+  async getChatAutoRun(chatId: number): Promise<boolean> {
+    const response = await axios.get<boolean>(`${chatapi.defaults.baseURL}/${chatId}/auto-run`);
+    return response.data;
+  },
+
+  async updateChatAutoRun(chatId: number, autoRun: boolean): Promise<Chat> {
+    const response = await axios.put<Chat>(`${chatapi.defaults.baseURL}/${chatId}/auto-run`, {
+      auto_run: autoRun
+    });
+    return response.data;
+  },
 };

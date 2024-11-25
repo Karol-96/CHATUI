@@ -1,6 +1,6 @@
 // src/components/AutoToolsPanel.tsx
 import React, { useState, useCallback, useRef } from 'react';
-import { Plus, Settings, Trash2, Eye, EyeOff, Edit2, RefreshCw, CheckCircle } from 'lucide-react';
+import { Plus, Check, Trash2, Eye, EyeOff, Edit2, RefreshCw, Octagon } from 'lucide-react';
 import { tokens } from '../styles/tokens';
 import { Tool, ToolCreate, TypedToolCreate, CallableToolCreate } from '../types';
 
@@ -14,6 +14,8 @@ interface AutoToolsPanelProps {
   onUpdateAutoTools: (toolIds: { tool_ids: number[] }) => Promise<void>;
   loading: boolean;
   autoToolsIds: number[];
+  stopToolId?: number;
+  onSetStopTool: (toolId: number | null) => Promise<void>;
 }
 
 const validateToolName = (name: string): boolean => {
@@ -38,6 +40,8 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
   onUpdateAutoTools,
   loading,
   autoToolsIds,
+  stopToolId,
+  onSetStopTool,
 }) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showToolDetails, setShowToolDetails] = useState<number | null>(null);
@@ -94,6 +98,19 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
       }
     },
     [loading, selectedChatId, autoToolsIds, onUpdateAutoTools]
+  );
+
+  const handleSetStopTool = useCallback(
+    async (toolId: number | null) => {
+      if (loading || !selectedChatId) return;
+
+      try {
+        await onSetStopTool(toolId);
+      } catch (error) {
+        console.error('Failed to set stop tool:', error);
+      }
+    },
+    [loading, selectedChatId, onSetStopTool]
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -192,30 +209,43 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
   };
 
   const renderToolItem = (tool: Tool) => {
-    const isActive = autoToolsIds.includes(tool.id); // Multiple active tools
+    const isActive = autoToolsIds.includes(tool.id);
     const isShowingDetails = showToolDetails === tool.id;
+    const isStopTool = tool.id === stopToolId;
 
     return (
       <div
         key={tool.id}
         className={`p-4 border-b border-gray-100 dark:border-gray-800 ${
-          isActive ? 'bg-blue-50 dark:bg-blue-900/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+          isStopTool
+            ? 'bg-red-50 dark:bg-red-900/50'
+            : isActive
+              ? 'bg-blue-50 dark:bg-blue-900/50'
+              : 'hover:bg-gray-50 dark:hover:bg-gray-800'
         } transition-colors duration-200`}
       >
         <div className="flex justify-between items-start">
-          <div>
+          <div className="min-w-0 flex-1">
             {tool.is_callable ? (
-              <div className="font-medium text-gray-900 dark:text-gray-100">{tool.name}</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100 truncate" title={tool.name}>
+                {tool.name}
+              </div>
             ) : (
-              <div className="font-medium text-gray-900 dark:text-gray-100">{tool.schema_name}</div>
+              <div className="font-medium text-gray-900 dark:text-gray-100 truncate" title={tool.schema_name}>
+                {tool.schema_name}
+              </div>
             )}
             {tool.is_callable ? (
-              <div className="text-sm text-gray-500 dark:text-gray-400">{tool.description}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 truncate" title={tool.description}>
+                {tool.description}
+              </div>
             ) : (
-              <div className="text-sm text-gray-500 dark:text-gray-400">{tool.schema_description}</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400 truncate" title={tool.schema_description}>
+                {tool.schema_description}
+              </div>
             )}
           </div>
-          <div className="flex gap-1">
+          <div className="flex flex-col gap-1 ml-2">
             {!tool.is_callable && (
               <button
                 onClick={() => handleEdit(tool)}
@@ -252,45 +282,54 @@ export const AutoToolsPanel: React.FC<AutoToolsPanelProps> = ({
             <button
               onClick={() => !loading && handleAssign(tool.id)}
               disabled={loading}
-              className={`text-sm px-2 py-1 rounded flex items-center gap-1 transition-colors duration-200 ${
+              className={`p-1 rounded flex items-center gap-1 transition-colors duration-200 ${
                 loading ? 'opacity-50 cursor-not-allowed' : ''
               } ${
                 isActive
-                  ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                  ? 'text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
               title={isActive ? 'Remove from auto tools' : 'Add to auto tools'}
             >
               {loading ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : isActive ? (
-                <>
-                  <CheckCircle className="w-4 h-4" />
-                  Remove
-                </>
+                <Check className="w-4 h-4" />
               ) : (
-                <>
-                  <Settings className="w-4 h-4" />
-                  Add
-                </>
+                <Plus className="w-4 h-4" />
+              )}
+            </button>
+          )}
+          {isActive && selectedChatId && (
+            <button
+              onClick={() => !loading && handleSetStopTool(isStopTool ? null : tool.id)}
+              disabled={loading}
+              className={`p-1 rounded flex items-center gap-1 transition-colors duration-200 ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              } ${
+                isStopTool
+                  ? 'text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900'
+                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              title={isStopTool ? 'Remove stop tool' : 'Set as stop tool'}
+            >
+              {loading ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <Octagon className="w-4 h-4" />
               )}
             </button>
           )}
           {!tool.is_callable && (
             <button
               onClick={() => setShowToolDetails(isShowingDetails ? null : tool.id)}
-              className="text-sm px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-1 transition-colors duration-200"
+              className="p-1 rounded text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1 transition-colors duration-200"
+              title={isShowingDetails ? 'Hide Schema' : 'Show Schema'}
             >
               {isShowingDetails ? (
-                <>
-                  <EyeOff className="w-4 h-4" />
-                  Hide Schema
-                </>
+                <EyeOff className="w-4 h-4" />
               ) : (
-                <>
-                  <Eye className="w-4 h-4" />
-                  Show Schema
-                </>
+                <Eye className="w-4 h-4" />
               )}
             </button>
           )}

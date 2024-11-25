@@ -83,6 +83,9 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
           const chatState = openChats[tabId];
           const isActive = activeTabId === tabId;
           const isDoubleHeight = shouldDoubleHeight(index);
+          const currentTool = tools.find(t => t.id === chatState?.chat.active_tool_id);
+          const currentStopTool = tools.find(t => t.id === chatState?.chat.stop_tool_id);
+          const currentSystemPrompt = systemPrompts.find(sp => sp.id === chatState?.chat.system_prompt_id);
 
           if (!chatState) return null;
 
@@ -104,9 +107,11 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
                   onAfterDelete={() => onAfterDelete(tabId.toString())}
                   onAfterClear={onAfterClear}
                   onNameUpdate={onAfterClear}
-                  systemPromptName={chatState.chat.system_prompt_id ? systemPrompts.find(sp => sp.id === chatState.chat.system_prompt_id)?.name : undefined}
-                  toolName={chatState.chat.active_tool_id ? getToolName(tools.find(t => t.id === chatState.chat.active_tool_id)) : undefined}
+                  systemPromptName={currentSystemPrompt?.name}
+                  toolName={currentTool ? getToolName(currentTool) : undefined}
+                  stopToolName={currentStopTool ? getToolName(currentStopTool) : undefined}
                   isTmux={true}
+                  onClose={() => onTabClose(tabId.toString())}
                   onLLMConfigUpdate={() => onLLMConfigUpdate(chatId)}
                   columnCount={(chatCount <= 2 ? chatCount : 3) as 1 | 2 | 3}
                 />

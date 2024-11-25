@@ -34,6 +34,7 @@ export interface Chat {
   active_tool_id?: number;
   auto_tools_ids: number[];
   stop_tool_id?: number;
+  auto_run: boolean;
   // Keeping these for backward compatibility
   createdAt?: string;
   system_prompt_uuid?: UUID;

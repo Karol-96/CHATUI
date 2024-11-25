@@ -3,6 +3,7 @@ import { Trash2, X, Eraser, Wand2, Wrench, Settings, Edit2, MessageSquare, Bot }
 import { ChatControlBarProps, LLMConfig, LLMConfigUpdate, ResponseFormat } from '../types';
 import { chatApi } from '../api';
 import { LLMConfigMenu } from './LLMConfigMenu';
+import { tokens } from '../styles/tokens';
 
 export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   chatId,
@@ -138,7 +139,8 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
               ? 'px-3 py-1.5'
               : 'px-4 py-2'
           : 'px-4 py-2'
-      } border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0 ${isTmux ? '' : 'h-[3.5rem]'}`}
+      } border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shrink-0`}
+      style={{ height: `calc(${tokens.spacing.header} - 1px)` }}
     >
       <div className={`flex items-center ${getSizeClasses()}`}>
         <div className="group relative">
@@ -358,19 +360,15 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
       </div>
 
       <div className="flex items-center space-x-2">
-        <button
-          onClick={handleClearHistory}
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded"
-          title="Clear History"
-        >
-          <Eraser size={getIconSize()} />
-        </button>
-        <button
-          onClick={onClose}
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded"
-        >
-          <X size={getIconSize()} />
-        </button>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 p-1 rounded"
+            title="Close Tab"
+          >
+            <X size={getIconSize()} />
+          </button>
+        )}
       </div>
 
       {isConfigMenuOpen && (

@@ -44,7 +44,7 @@ export const TabBar: React.FC<TabBarProps> = ({
 
   return (
     <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center" style={{ height: tokens.spacing.header }}>
+      <div className="flex items-center" style={{ height: `calc(${tokens.spacing.header} - 1px)` }}>
         <div className="flex gap-1 overflow-x-auto flex-1 px-4 items-center scrollbar-none">
           {tabs.map((tab, index) => (
             <div

@@ -90,6 +90,25 @@ export const RightPanel: React.FC<RightPanelProps> = ({
           }}
           loading={loading}
           autoToolsIds={chatState?.chat.auto_tools_ids || []}
+          stopToolId={chatState?.chat.stop_tool_id}
+          onSetStopTool={async (toolId) => {
+            if (!activeChatId) return;
+            try {
+              if (toolId === null) {
+                await chatApi.removeStopTool(activeChatId);
+              } else {
+                await chatApi.setStopTool(activeChatId, toolId);
+              }
+              // Refresh both tools and chat state
+              onRefreshTools();
+              const updatedChat = await chatApi.getChat(activeChatId);
+              if (chatState) {
+                chatState.chat = updatedChat;
+              }
+            } catch (error) {
+              console.error('Failed to update stop tool:', error);
+            }
+          }}
         />
       );
     }
