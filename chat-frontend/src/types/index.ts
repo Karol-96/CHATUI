@@ -35,6 +35,7 @@ export interface Chat {
   auto_tools_ids: number[];
   stop_tool_id?: number;
   auto_run: boolean;
+  is_running: boolean;
   // Keeping these for backward compatibility
   createdAt?: string;
   system_prompt_uuid?: UUID;
@@ -256,6 +257,7 @@ export interface CentralWindowProps {
   onTmuxModeToggle: () => void;
   onLLMConfigUpdate: (chatId: number) => void;
   onTabReorder: (fromIndex: number, toIndex: number) => void;
+  onChatsUpdate?: (updatedChats: Record<string, ChatState>) => void;
 }
 
 export interface TmuxLayoutProps {

@@ -44,7 +44,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         {messages.map((message, index) => (
           <ChatMessage key={message.uuid || index} message={message} />
         ))}
-        {pendingMessage && (
+        {pendingMessage && !isLoading && (
           <ChatMessage
             message={{
               role: MessageRole.user,

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ChatWindow } from './ChatWindow';
 import { TmuxLayout } from './TmuxLayout';
 import { TabBar } from './TabBar';
 import { ChatControlBar } from './ChatControlBar';
 import { ChatState, Tool, SystemPrompt } from '../types';
+import { chatApi } from '../api';
 
 interface CentralWindowProps {
   openChats: Record<string, ChatState>;
@@ -22,6 +23,7 @@ interface CentralWindowProps {
   onTmuxModeToggle: () => void;
   onLLMConfigUpdate: (chatId: number) => void;
   onTabReorder: (fromIndex: number, toIndex: number) => void;
+  onChatsUpdate?: (updatedChats: Record<string, ChatState>) => void;
 }
 
 export const CentralWindow: React.FC<CentralWindowProps> = ({
@@ -41,7 +43,76 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
   onTmuxModeToggle,
   onLLMConfigUpdate,
   onTabReorder,
+  onChatsUpdate,
 }) => {
+  // Add polling effect for auto_tools mode when loading
+  useEffect(() => {
+    const chatIdsToPool = isTmuxMode 
+      ? Object.entries(openChats)
+          .filter(([_, state]) => state.isLoading)
+          .map(([id]) => parseInt(id, 10))
+      : activeTabId && openChats[activeTabId]?.isLoading 
+        ? [parseInt(activeTabId, 10)]
+        : [];
+
+    if (chatIdsToPool.length === 0) return;
+
+    console.log('Polling chats:', chatIdsToPool);
+
+    // Function to perform polling
+    const pollChats = async () => {
+      for (const chatId of chatIdsToPool) {
+        try {
+          const updatedChat = await chatApi.getChat(chatId);
+          const tabId = chatId.toString();
+          
+          const currentState = openChats[tabId];
+          console.log('Current history:', currentState.messages.length, 'Updated history:', updatedChat.history.length);
+          console.log('Updated messages:', updatedChat.history);
+          
+          if (updatedChat.history.length !== currentState.messages.length || updatedChat.is_running !== currentState.chat.is_running) {
+            console.log('Updating state with new messages or running state change');
+            const newState: ChatState = {
+              ...currentState,
+              chat: {...updatedChat},  // Create new object
+              messages: [...updatedChat.history],  // Create new array
+              isLoading: updatedChat.is_running  // Use backend's running state
+            };
+
+            // Update the chat state through the parent component
+            const updatedChats = {
+              ...openChats,
+              [tabId]: newState
+            };
+            
+            // Notify parent of state changes
+            onChatsUpdate?.(updatedChats);
+
+            // If backend says it's not running anymore, stop polling
+            if (!updatedChat.is_running) {
+              console.log('Backend finished processing, stopping polling');
+              clearInterval(pollInterval);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error(`Polling error for chat ${chatId}:`, error);
+        }
+      }
+    };
+
+    // Do first poll after 200ms to allow DB to process the send request
+    const firstPollTimeout = setTimeout(pollChats, 200);
+
+    // Then set up interval for subsequent polls
+    const pollInterval = setInterval(pollChats, 2000);
+
+    return () => {
+      clearInterval(pollInterval);
+      clearTimeout(firstPollTimeout);
+    };
+  }, [activeTabId, openChats, isTmuxMode, onChatsUpdate]);
+
   if (!activeTabId && !isTmuxMode) return null;
 
   const handleTabReorder = (fromIndex: number, toIndex: number) => {

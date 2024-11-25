@@ -636,6 +636,15 @@ function App() {
     return tool.schema_name;
   };
 
+  const handleChatsUpdate = useCallback((updatedChats: Record<string, ChatState>) => {
+    setOpenChats(updatedChats);
+    // Also update the cache
+    setChatStateCache(prev => ({
+      ...prev,
+      ...updatedChats
+    }));
+  }, []);
+
   return (
     <ThemeProvider>
       <div className="flex h-screen overflow-hidden">
@@ -659,9 +668,7 @@ function App() {
             onTabSelect={setActiveTabId}
             onTabClose={handleTabClose}
             onAfterDelete={handleTabClose}
-            onAfterClear={async (chatId: number) => {
-              await handleClearHistory(chatId);
-            }}
+            onAfterClear={handleClearHistory}
             tools={tools}
             systemPrompts={systemPrompts}
             activeTool={activeTool}
@@ -669,6 +676,7 @@ function App() {
             onTmuxModeToggle={() => setIsTmuxMode(!isTmuxMode)}
             onLLMConfigUpdate={(chatId: number) => incrementActivityCounters(chatId, 'llmConfig')}
             onTabReorder={handleTabReorder}
+            onChatsUpdate={handleChatsUpdate}
           />
         </div>
 
