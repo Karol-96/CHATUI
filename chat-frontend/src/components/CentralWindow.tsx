@@ -14,7 +14,7 @@ interface CentralWindowProps {
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onAfterDelete: (tabId: string) => void;
-  onAfterClear: () => void;
+  onAfterClear: (chatId: number) => Promise<void>;
   tools: Tool[];
   systemPrompts: SystemPrompt[];
   activeTool?: number | null;
@@ -116,7 +116,7 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
                   chatId={parseInt(activeTabId, 10)}
                   onAfterDelete={() => onAfterDelete(activeTabId)}
                   onAfterClear={onAfterClear}
-                  onNameUpdate={onAfterClear}
+                  onNameUpdate={() => {}}
                   systemPromptName={openChats[activeTabId]?.chat.system_prompt_id ? 
                     systemPrompts.find(sp => sp.id === openChats[activeTabId]?.chat.system_prompt_id)?.name 
                     : undefined}

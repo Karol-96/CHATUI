@@ -106,7 +106,7 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
                   chatId={chatId}
                   onAfterDelete={() => onAfterDelete(tabId.toString())}
                   onAfterClear={onAfterClear}
-                  onNameUpdate={onAfterClear}
+                  onNameUpdate={() => {}}
                   systemPromptName={currentSystemPrompt?.name}
                   toolName={currentTool ? getToolName(currentTool) : undefined}
                   stopToolName={currentStopTool ? getToolName(currentStopTool) : undefined}

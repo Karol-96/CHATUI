@@ -180,7 +180,7 @@ export interface ChatInputProps {
 export interface ChatControlBarProps {
   chatId: number;
   onAfterDelete: () => void;
-  onAfterClear: () => void;
+  onAfterClear: (chatId: number) => Promise<void>;
   onClose?: () => void;
   onNameUpdate?: () => void;
   systemPromptName?: string;
@@ -188,7 +188,7 @@ export interface ChatControlBarProps {
   stopToolName?: string;
   isTmux?: boolean;
   onLLMConfigUpdate?: () => void;
-  columnCount?: number;
+  columnCount?: 1 | 2 | 3;
   isLoading?: boolean;
 }
 
@@ -248,7 +248,7 @@ export interface CentralWindowProps {
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onAfterDelete: (tabId: string) => void;
-  onAfterClear: () => void;
+  onAfterClear: (chatId: number) => Promise<void>;
   tools: Tool[];
   systemPrompts: SystemPrompt[];
   activeTool?: number | null;
@@ -266,7 +266,7 @@ export interface TmuxLayoutProps {
   onTabSelect: (tabId: string) => void;
   onTabClose: (tabId: string) => void;
   onAfterDelete: (tabId: string) => void;
-  onAfterClear: () => void;
+  onAfterClear: (chatId: number) => Promise<void>;
   tools: Tool[];
   systemPrompts: SystemPrompt[];
   activeTool?: number | null;

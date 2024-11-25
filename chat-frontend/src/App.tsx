@@ -625,10 +625,8 @@ function App() {
             onTabSelect={setActiveTabId}
             onTabClose={handleTabClose}
             onAfterDelete={handleTabClose}
-            onAfterClear={() => {
-              if (activeTabId) {
-                handleClearHistory(parseInt(activeTabId, 10));
-              }
+            onAfterClear={async (chatId: number) => {
+              await handleClearHistory(chatId);
             }}
             tools={tools}
             systemPrompts={systemPrompts}

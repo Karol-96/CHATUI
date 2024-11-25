@@ -106,7 +106,7 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   const handleClearHistory = async () => {
     try {
       await chatApi.clearHistory(chatId);
-      onAfterClear();
+      onAfterClear(chatId);
     } catch (error) {
       console.error('Error clearing chat history:', error);
     }
