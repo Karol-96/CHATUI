@@ -33,6 +33,7 @@ export interface Chat {
   system_prompt_id?: number;
   active_tool_id?: number;
   auto_tools_ids: number[];
+  stop_tool_id?: number;
   // Keeping these for backward compatibility
   createdAt?: string;
   system_prompt_uuid?: UUID;
@@ -183,6 +184,7 @@ export interface ChatControlBarProps {
   onNameUpdate: () => void;
   systemPromptName?: string;
   toolName?: string;
+  stopToolName?: string;
   isTmux?: boolean;
   onLLMConfigUpdate?: () => void;
   columnCount?: 1 | 2 | 3;

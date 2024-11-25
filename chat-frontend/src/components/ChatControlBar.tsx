@@ -12,6 +12,7 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   onNameUpdate,
   systemPromptName,
   toolName,
+  stopToolName,
   isTmux = false,
   onLLMConfigUpdate,
   columnCount = 1,
@@ -325,6 +326,31 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
                 {currentConfig.response_format === ResponseFormat.auto_tools 
                   ? 'AutoTools Mode'
                   : `${currentConfig.response_format.charAt(0).toUpperCase() + currentConfig.response_format.slice(1)} Mode`}
+              </div>
+            </div>
+          )}
+
+          {stopToolName && currentConfig?.response_format === ResponseFormat.auto_tools && (
+            <div 
+              className="group relative bg-red-50 dark:bg-red-900/20 rounded-md border border-red-200 dark:border-red-800 flex items-center space-x-1 flex-shrink-0"
+              title={`Stop Tool: ${stopToolName}`}
+            >
+              <div className={`flex items-center space-x-1 ${
+                columnCount === 3 
+                  ? 'px-1.5 py-0.5'
+                  : columnCount === 2
+                    ? 'px-2 py-1'
+                    : 'px-3 py-1'
+              }`}>
+                <X size={columnCount === 3 ? 10 : columnCount === 2 ? 12 : 14} className="text-red-700 dark:text-red-300 flex-shrink-0" />
+                <span className={`text-red-700 dark:text-red-300 truncate ${
+                  columnCount === 3 ? 'text-sm' : columnCount === 2 ? 'text-sm' : 'text-base'
+                }`}>
+                  {stopToolName.length > getTruncateLength() ? `${stopToolName.slice(0, getTruncateLength())}..` : stopToolName}
+                </span>
+              </div>
+              <div className="hidden group-hover:block absolute left-1/2 -translate-x-1/2 top-full mt-1 px-2 py-1 text-xs text-white dark:text-gray-200 bg-gray-800 dark:bg-gray-900 rounded whitespace-nowrap z-50">
+                Stop Tool: {stopToolName}
               </div>
             </div>
           )}

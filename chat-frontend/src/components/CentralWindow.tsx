@@ -123,6 +123,9 @@ export const CentralWindow: React.FC<CentralWindowProps> = ({
                   toolName={openChats[activeTabId]?.chat.active_tool_id ? 
                     getToolName(tools.find(t => t.id === openChats[activeTabId]?.chat.active_tool_id))
                     : undefined}
+                  stopToolName={openChats[activeTabId]?.chat.stop_tool_id ? 
+                    getToolName(tools.find(t => t.id === openChats[activeTabId]?.chat.stop_tool_id))
+                    : undefined}
                   isTmux={isTmuxMode}
                   onLLMConfigUpdate={() => onLLMConfigUpdate(parseInt(activeTabId, 10))}
                 />

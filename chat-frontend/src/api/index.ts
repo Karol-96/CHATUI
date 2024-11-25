@@ -328,5 +328,23 @@ export const chatApi = {
     } catch (error) {
       throw handleApiError(error);
     }
+  },
+
+  setStopTool: async (chatId: number, toolId: number): Promise<Chat> => {
+    try {
+      const response = await chatapi.put<Chat>(`${chatapi.defaults.baseURL}/${chatId}/stop-tool/${toolId}`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  removeStopTool: async (chatId: number): Promise<Chat> => {
+    try {
+      const response = await chatapi.delete<Chat>(`${chatapi.defaults.baseURL}/${chatId}/stop-tool`);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
   }
 };
