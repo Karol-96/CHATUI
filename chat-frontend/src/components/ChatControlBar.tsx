@@ -311,7 +311,7 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
             </div>
           )}
 
-          {toolName && (
+          {toolName && currentConfig?.response_format !== ResponseFormat.auto_tools && (
             <div 
               className="group relative bg-purple-50 dark:bg-purple-900/20 rounded-md border border-purple-200 dark:border-purple-800 flex items-center space-x-1 flex-shrink-0"
               title={toolName}

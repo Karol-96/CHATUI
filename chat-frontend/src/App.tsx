@@ -16,6 +16,8 @@ function App() {
   const [chats, setChats] = useState<Chat[]>([]);
   // Only the chats that are open in tabs
   const [openChats, setOpenChats] = useState<Record<string, ChatState>>({});
+  // Cache of chat states
+  const [chatStateCache, setChatStateCache] = useState<Record<string, ChatState>>({});
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [tabOrder, setTabOrder] = useState<number[]>([]);
   const [error, setError] = useState<string | undefined>();
@@ -106,18 +108,34 @@ function App() {
     const tabId = chat.id.toString();
     
     try {
+      // Check if chat is already open
+      if (openChats[tabId]) {
+        setActiveTabId(tabId);
+        return;
+      }
+
       // Get fresh data from API
       const freshChat = await chatApi.getChat(chat.id);
       
+      // Use cached state if available, otherwise create new state
+      const cachedState = chatStateCache[tabId];
+      const newState: ChatState = cachedState || {
+        chat: freshChat,
+        messages: freshChat.history || [],
+        error: undefined,
+        isLoading: false,
+        previewMessage: undefined
+      };
+
+      // Update both open chats and cache
       setOpenChats(prev => ({
         ...prev,
-        [tabId]: {
-          chat: freshChat,
-          messages: freshChat.history || [],
-          error: undefined,
-          isLoading: false,
-          previewMessage: undefined
-        }
+        [tabId]: newState
+      }));
+
+      setChatStateCache(prev => ({
+        ...prev,
+        [tabId]: newState
       }));
 
       // Add to tabOrder if not already there
@@ -135,7 +153,7 @@ function App() {
       console.error('Failed to open chat:', error);
       setError(error instanceof Error ? error.message : 'Failed to open chat');
     }
-  }, []);
+  }, [openChats, chatStateCache]);
 
   // Set default name for a chat if it doesn't have one
   const ensureChatHasName = async (chat: Chat) => {
@@ -213,6 +231,15 @@ function App() {
 
   // Close a tab (but don't delete the chat)
   const handleTabClose = useCallback((tabId: string) => {
+    // Save current state to cache before closing
+    const currentState = openChats[tabId];
+    if (currentState) {
+      setChatStateCache(prev => ({
+        ...prev,
+        [tabId]: currentState
+      }));
+    }
+
     // Remove from openChats
     const { [tabId]: removedChat, ...remainingChats } = openChats;
     setOpenChats(remainingChats);
@@ -403,16 +430,30 @@ function App() {
     if (!chatState) return;
 
     const chatId = parseInt(activeTabId, 10);
+    const updateState = (newState: Partial<ChatState>) => {
+      const updatedState = {
+        ...chatState,
+        ...newState
+      };
 
-    setOpenChats(prev => ({
-      ...prev,
-      [activeTabId]: {
-        ...prev[activeTabId],
-        isLoading: true,
-        previewMessage: triggerAssistant ? undefined : content,
-        error: undefined,
-      }
-    }));
+      // Update both openChats and cache
+      setOpenChats(prev => ({
+        ...prev,
+        [activeTabId]: updatedState
+      }));
+
+      setChatStateCache(prev => ({
+        ...prev,
+        [activeTabId]: updatedState
+      }));
+    };
+
+    // Set loading state
+    updateState({
+      isLoading: true,
+      previewMessage: triggerAssistant ? undefined : content,
+      error: undefined,
+    });
 
     try {
       // Use triggerAssistantResponse when triggered by Ctrl+Enter/button, otherwise use sendMessage
@@ -435,31 +476,24 @@ function App() {
         incrementActivityCounters(chatId, 'message', msg.role);
       });
 
-      setOpenChats(prev => ({
-        ...prev,
-        [activeTabId]: {
-          ...prev[activeTabId],
-          chat: updatedChat,
-          messages: newMessages,
-          isLoading: false,
-          previewMessage: undefined,
-          error: undefined
-        }
-      }));
+      // Update state with new messages
+      updateState({
+        chat: updatedChat,
+        messages: newMessages,
+        isLoading: false,
+        previewMessage: undefined,
+        error: undefined
+      });
       
     } catch (error) {
       console.error('Failed to send message:', error);
-      setOpenChats(prev => ({
-        ...prev,
-        [activeTabId]: {
-          ...prev[activeTabId],
-          error: error instanceof Error ? error.message : 'Failed to send message',
-          isLoading: false,
-          previewMessage: undefined,
-        }
-      }));
+      updateState({
+        error: error instanceof Error ? error.message : 'Failed to send message',
+        isLoading: false,
+        previewMessage: undefined,
+      });
     }
-  }, [activeTabId, openChats]);
+  }, [activeTabId, openChats, incrementActivityCounters]);
 
   const handleCreateTool = async (tool: ToolCreate) => {
     try {
