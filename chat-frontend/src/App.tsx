@@ -504,17 +504,6 @@ function App() {
       setChats(prev => prev.map(chat => 
         chat.id === chatId ? updatedChat : chat
       ));
-
-      // Force refresh the chat state
-      const refreshedChat = await chatApi.getChat(chatId);
-      setOpenChats(prev => ({
-        ...prev,
-        [tabId]: {
-          ...prev[tabId],
-          chat: refreshedChat,
-          messages: refreshedChat.history || [],
-        }
-      }));
     } catch (error) {
       console.error('Failed to clear history:', error);
       setError(error instanceof Error ? error.message : 'Failed to clear history');
