@@ -485,7 +485,7 @@ function App() {
     }
   };
 
-  const handleClearHistory = async (chatId: number) => {
+  const handleClearHistory = useCallback(async (chatId: number) => {
     try {
       const updatedChat = await chatApi.clearHistory(chatId);
       const tabId = chatId.toString();
@@ -519,7 +519,7 @@ function App() {
       console.error('Failed to clear history:', error);
       setError(error instanceof Error ? error.message : 'Failed to clear history');
     }
-  };
+  }, []);
 
   const handleTabReorder = useCallback((fromIndex: number, toIndex: number) => {
     setTabOrder(prev => {
@@ -636,7 +636,11 @@ function App() {
             onTabSelect={setActiveTabId}
             onTabClose={handleTabClose}
             onAfterDelete={handleTabClose}
-            onAfterClear={loadChats}
+            onAfterClear={() => {
+              if (activeTabId) {
+                handleClearHistory(parseInt(activeTabId, 10));
+              }
+            }}
             tools={tools}
             systemPrompts={systemPrompts}
             activeTool={activeTool}

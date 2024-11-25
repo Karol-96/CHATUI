@@ -114,6 +114,7 @@ export const TmuxLayout: React.FC<TmuxLayoutProps> = ({
                   onClose={() => onTabClose(tabId.toString())}
                   onLLMConfigUpdate={() => onLLMConfigUpdate(chatId)}
                   columnCount={(chatCount <= 2 ? chatCount : 3) as 1 | 2 | 3}
+                  isLoading={chatState.isLoading}
                 />
               </div>
               <div className="flex-1 min-h-0">

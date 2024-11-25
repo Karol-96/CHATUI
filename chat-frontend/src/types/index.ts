@@ -182,13 +182,14 @@ export interface ChatControlBarProps {
   onAfterDelete: () => void;
   onAfterClear: () => void;
   onClose?: () => void;
-  onNameUpdate: () => void;
+  onNameUpdate?: () => void;
   systemPromptName?: string;
   toolName?: string;
   stopToolName?: string;
   isTmux?: boolean;
   onLLMConfigUpdate?: () => void;
-  columnCount?: 1 | 2 | 3;
+  columnCount?: number;
+  isLoading?: boolean;
 }
 
 export interface ChatWindowProps {

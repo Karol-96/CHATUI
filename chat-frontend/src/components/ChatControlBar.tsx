@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Trash2, X, Eraser, Wand2, Wrench, Settings, Edit2, MessageSquare, Bot } from 'lucide-react';
+import { Trash2, X, Eraser, Wand2, Wrench, Settings, Edit2, MessageSquare, Bot, Play, Pause } from 'lucide-react';
 import { ChatControlBarProps, LLMConfig, LLMConfigUpdate, ResponseFormat } from '../types';
 import { chatApi } from '../api';
 import { LLMConfigMenu } from './LLMConfigMenu';
@@ -17,11 +17,13 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
   isTmux = false,
   onLLMConfigUpdate,
   columnCount = 1,
+  isLoading = false,
 }) => {
   const [isConfigMenuOpen, setIsConfigMenuOpen] = useState(false);
   const [currentConfig, setCurrentConfig] = useState<LLMConfig | undefined>(undefined);
   const [isEditing, setIsEditing] = useState(false);
   const [chatName, setChatName] = useState<string>(`Chat ${chatId}`);
+  const [autoRun, setAutoRun] = useState(false);
 
   // Helper function to get size classes based on column count
   const getSizeClasses = () => {
@@ -88,6 +90,19 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
     fetchChat();
   }, [chatId]);
 
+  useEffect(() => {
+    // Fetch initial auto_run state
+    const fetchAutoRun = async () => {
+      try {
+        const isAutoRun = await chatApi.getChatAutoRun(chatId);
+        setAutoRun(isAutoRun);
+      } catch (error) {
+        console.error('Error fetching auto_run state:', error);
+      }
+    };
+    fetchAutoRun();
+  }, [chatId]);
+
   const handleClearHistory = async () => {
     try {
       await chatApi.clearHistory(chatId);
@@ -126,6 +141,15 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
       onNameUpdate?.(); // Call the callback if provided
     } catch (error) {
       console.error('Error updating chat name:', error);
+    }
+  };
+
+  const handleAutoRunToggle = async () => {
+    try {
+      await chatApi.updateChatAutoRun(chatId, !autoRun);
+      setAutoRun(!autoRun);
+    } catch (error) {
+      console.error('Error updating auto_run state:', error);
     }
   };
 
@@ -185,6 +209,31 @@ export const ChatControlBar: React.FC<ChatControlBarProps> = ({
 
       <div className={`flex-1 mx-${columnCount === 3 ? '2' : '4'}`}>
         <div className="flex items-center justify-center space-x-2 overflow-hidden">
+          {currentConfig?.response_format === 'auto_tools' && (
+            <div className="group relative -m-0.5">
+              <button
+                onClick={handleAutoRunToggle}
+                className={`relative p-1.5 rounded transition-colors duration-200 ${
+                  autoRun 
+                    ? 'text-green-500 hover:text-green-600 dark:text-green-400 dark:hover:text-green-500' 
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+                title={autoRun ? 'Auto-run is enabled' : 'Auto-run is disabled'}
+              >
+                <div className="relative">
+                  {autoRun ? <Pause size={getIconSize()} /> : <Play size={getIconSize()} />}
+                  {autoRun && (
+                    <div className={`absolute -inset-[3px] border border-green-500/50 dark:border-green-400/50 rounded ${
+                      isLoading ? 'animate-[spin_3s_linear_infinite]' : ''
+                    }`} />
+                  )}
+                </div>
+              </button>
+              <div className="hidden group-hover:block absolute left-0 top-full mt-1 px-2 py-1 text-xs text-white dark:text-gray-200 bg-gray-800 dark:bg-gray-900 rounded whitespace-nowrap z-50">
+                {autoRun ? 'Auto-run is enabled' : 'Auto-run is disabled'}
+              </div>
+            </div>
+          )}
           <div className={`inline-flex items-center justify-center ${
             columnCount === 3 
               ? 'px-1.5 py-0.5 min-w-[60px]'
